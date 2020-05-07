@@ -2,7 +2,7 @@ package cmf
 
 import (
 	"fmt"
-	"github.com/daifuyang/cmf/controller"
+	"github.com/gincmf/cmf/controller"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
