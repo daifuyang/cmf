@@ -13,13 +13,14 @@ type AppStruct struct {
 
 //Datebase 配置文件数据库对象 定义了数据库的基础信息
 type DatebaseStruct struct {
-	Type    string
-	Host    string
-	User    string
-	Pwd     string
-	Port    string
-	Charset string
-	Prefix  string
+	Type    string `json:"type"`
+	Host    string `json:"hostname"`
+	Name    string `json:"database"`
+	User    string `json:"username"`
+	Pwd     string `json:"password"`
+	Port    string `json:"hostport"`
+	Charset string `json:"charset"`
+	Prefix  string `json:"prefix"`
 }
 
 //ConfigDefault 定义了配置文件初始结构
@@ -55,10 +56,5 @@ func (conf *ConfigDataStruct) init(filePath string, v interface{}) {
 
 func Initialize(filePath string) {
 	ConfigData.init(filePath, &Config)
-
-	//初始化配置信息
-	TemplateMap.Theme = Config.Template.Theme
-	TemplateMap.ThemePath = Config.Template.ThemePath
-	TemplateMap.Glob = Config.Template.Glob
-	TemplateMap.Static = Config.Template.Static
+	initDefault()
 }
