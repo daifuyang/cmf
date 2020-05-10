@@ -6,9 +6,9 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
-//定义数据库类
-
 var Db *gorm.DB
+
+//定义数据库类
 var err error
 
 //2020 05 09
@@ -32,14 +32,7 @@ func initDefault() {
 	Db, err = gorm.Open(dbType, dbUser+":"+dbPwd+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
 	if err != nil {
 		fmt.Println("出错", err)
-		return
+		panic(err)
+		defer Db.Close()
 	}
-	autoMigrate()
-	defer Db.Close()
-}
-
-//2020 05 09
-//初始化数据库迁移
-func autoMigrate(){
-	
 }
