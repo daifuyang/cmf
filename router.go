@@ -37,7 +37,10 @@ func Start() {
 	Engine = gin.Default()
 	store := cookie.NewStore([]byte("secret"))
 	Engine.Use(sessions.Sessions("session", store))
-	LoadTemplate()
+	LoadTemplate() //加载模板
+
+	registerOauthRouter() //注册OAuth2.0验证
+
 	for _, router := range routerMap {
 		switch router.method {
 		case "GET":
@@ -64,6 +67,10 @@ func Start() {
 	Engine.Run(":" + Config.App.Port) // 监听并在 0.0.0.0 上启动服务
 }
 
+func registerOauthRouter() {
+
+}
+
 //抛出对外注册路由方法
 func Get(relativePath string, handlers ...gin.HandlerFunc) {
 	routerMap = append(routerMap, routerMapStruct{relativePath, handlers, "GET"})
@@ -75,15 +82,14 @@ func Post(relativePath string, handlers ...gin.HandlerFunc) {
 
 //处理资源控制器
 func Rest(relativePath string, restController controller.RestControllerInterface) {
-
-	if relativePath != "/" {
+	if relativePath == "/" {
+		routerMap = append(routerMap, routerMapStruct{"/api", []gin.HandlerFunc{restController.Get}, "GET"})
+	} else{
 		routerMap = append(routerMap, routerMapStruct{"/api"+ relativePath, []gin.HandlerFunc{restController.Get}, "GET"})                               //查询全部
 		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath + ":id", []gin.HandlerFunc{restController.Show}, "GET"})       //查询一条
 		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath + ":id/edit", []gin.HandlerFunc{restController.Edit}, "POST"}) //编辑一条
 		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, []gin.HandlerFunc{restController.Store}, "POST"})             //新增一条
 		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath + ":id", []gin.HandlerFunc{restController.Delete}, "DELETE"})  //删除一条
-	} else{
-		routerMap = append(routerMap, routerMapStruct{"/api", []gin.HandlerFunc{restController.Get}, "GET"})
 	}
 }
 
