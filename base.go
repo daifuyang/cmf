@@ -2,11 +2,13 @@ package cmf
 
 import (
 	"fmt"
+	"github.com/gincmf/cmf/router"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 var Db *gorm.DB
+
 
 //定义数据库类
 var err error
@@ -28,10 +30,14 @@ func initDefault() {
 	dbPort := Config.Datebase.Port
 	dbName := Config.Datebase.Name
 	dbCharset := Config.Datebase.Charset
+
+	router.AppPort = &Config.App.Port
+
+	fmt.Println("port",router.AppPort)
+
 	//连接sql
 	Db, err = gorm.Open(dbType, dbUser+":"+dbPwd+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
 	if err != nil {
-		fmt.Println("出错", err)
 		panic(err)
 		defer Db.Close()
 	}

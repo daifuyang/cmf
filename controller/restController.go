@@ -19,10 +19,19 @@ type RestControllerStruct struct {
 type returnData struct {
 	Code int    `json:"code"`
 	Msg  string `json:"msg"`
+	data interface{} `json:"data"`
 }
 
-func Success(c *gin.Context, msg string, data interface{}) {
-	var success returnData
-	success = returnData{1, msg}
-	c.JSON(http.StatusOK, success)
+func (r RestControllerStruct) Success(c *gin.Context,msg string, data interface{}) {
+	var result returnData
+	result = returnData{1, msg,data}
+	c.JSON(http.StatusOK, result)
+	c.Abort()
+}
+
+func (r RestControllerStruct) Error(c *gin.Context,msg string, data ...interface{}) {
+	var result returnData
+	result = returnData{0,msg,data}
+	c.JSON(http.StatusOK, result)
+	c.Abort()
 }
