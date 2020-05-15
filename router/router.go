@@ -2,6 +2,8 @@ package router
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -30,9 +32,13 @@ func RegisterOauthRouter(e *gin.Engine) {
 
 	authServerURL += *AppPort
 
+	h := md5.New()
+	h.Write([]byte("gincmf"))
+	md5str := hex.EncodeToString(h.Sum(nil))
+
 	config := oauth2.Config{
 		ClientID:     "1",
-		ClientSecret: "5ebe2294ecd0e0f08eab7690d2a6ee69",
+		ClientSecret: md5str,
 		Scopes:       []string{"all"},
 		RedirectURL:  authServerURL,
 		Endpoint: oauth2.Endpoint{
@@ -49,7 +55,7 @@ func RegisterOauthRouter(e *gin.Engine) {
 
 	// generate jwt access token
 
-	accessToken := generates.NewJWTAccessGenerate([]byte("00000000"), jwt.SigningMethodHS512)
+	accessToken := generates.NewJWTAccessGenerate([]byte("gincmf"), jwt.SigningMethodHS512)
 	manager.MapAccessGenerate(accessToken)
 	clientStore := store.NewClientStore()
 	clientStore.Set(config.ClientID, &models.Client{
@@ -67,7 +73,7 @@ func RegisterOauthRouter(e *gin.Engine) {
 		return userID,nil
 	})
 
-	e.GET("/oauth/token",func(c *gin.Context){
+	e.GET("api/oauth/token",func(c *gin.Context){
 
 		username := c.Query("username")
 		password := c.Query("password")

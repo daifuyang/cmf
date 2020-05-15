@@ -19,7 +19,7 @@ type RestControllerStruct struct {
 type returnData struct {
 	Code int    `json:"code"`
 	Msg  string `json:"msg"`
-	data interface{} `json:"data"`
+	Data interface{} `json:"data"`
 }
 
 func (r RestControllerStruct) Success(c *gin.Context,msg string, data interface{}) {
