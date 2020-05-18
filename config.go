@@ -11,8 +11,8 @@ type AppStruct struct {
 	Port string
 }
 
-//Datebase 配置文件数据库对象 定义了数据库的基础信息
-type DatebaseStruct struct {
+//Database 配置文件数据库对象 定义了数据库的基础信息
+type DatabaseStruct struct {
 	Type    string `json:"type"`
 	Host    string `json:"hostname"`
 	Name    string `json:"database"`
@@ -21,21 +21,22 @@ type DatebaseStruct struct {
 	Port    string `json:"hostport"`
 	Charset string `json:"charset"`
 	Prefix  string `json:"prefix"`
+	AuthCode string `json:"auth_code"`
 }
 
 //ConfigDefault 定义了配置文件初始结构
 type ConfigDefaultStruct struct {
 	App      AppStruct
 	Template TemplateMapStruct `json:"template"`
-	Datebase DatebaseStruct
+	Database DatabaseStruct
 }
 
 //ConfigData 定义一个空结构体
 type ConfigDataStruct struct {
 }
 
-var ConfigData ConfigDataStruct
-var Config = ConfigDefaultStruct{}
+var configData ConfigDataStruct
+var config = ConfigDefaultStruct{}
 
 //定义空结构体
 func (conf *ConfigDataStruct) init(filePath string, v interface{}) {
@@ -47,6 +48,8 @@ func (conf *ConfigDataStruct) init(filePath string, v interface{}) {
 		return
 	}
 
+	fmt.Println("data",string(data[:]))
+
 	//读取的数据为json格式，需要进行解码
 	err = json.Unmarshal(data, v)
 	if err != nil {
@@ -55,6 +58,31 @@ func (conf *ConfigDataStruct) init(filePath string, v interface{}) {
 }
 
 func Initialize(filePath string) {
-	ConfigData.init(filePath, &Config)
+	configData.init(filePath, &config)
 	initDefault()
 }
+
+func Conf() *ConfigDefaultStruct {
+
+	//if attr == "" {
+	//	panic(errors.New("属性不能为空！"))
+	//}
+	//attrArr := strings.Split(attr,".")
+	//fmt.Println("attrArr",attrArr)
+	//refc := reflect.ValueOf(config)
+	//
+	//for k,v := range attrArr{
+	//	fmt.Println(k,v)
+	//	refc = refc.FieldByName(v)
+	//	fmt.Println(v,refc.Type())
+	//}
+	//
+	//fmt.Println("value：",refc)
+	//
+	//return refc.String()
+
+	return &config
+
+}
+
+

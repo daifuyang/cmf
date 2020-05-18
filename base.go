@@ -3,6 +3,7 @@ package cmf
 import (
 	"fmt"
 	"github.com/gincmf/cmf/router"
+	"github.com/gincmf/cmf/util"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
@@ -17,26 +18,35 @@ var err error
 //初始化默认设置
 func initDefault() {
 	fmt.Println("核心初始化")
+	config := Conf()
 	//初始化配置信息
-	TemplateMap.Theme = Config.Template.Theme
-	TemplateMap.ThemePath = Config.Template.ThemePath
-	TemplateMap.Glob = Config.Template.Glob
-	TemplateMap.Static = Config.Template.Static
+	TemplateMap.Theme = config.Template.Theme
+	TemplateMap.ThemePath = config.Template.ThemePath
+	TemplateMap.Glob = config.Template.Glob
+	TemplateMap.Static = config.Template.Static
 
-	dbType := Config.Datebase.Type
-	dbUser := Config.Datebase.User
-	dbPwd := Config.Datebase.Pwd
-	dbHost := Config.Datebase.Host
-	dbPort := Config.Datebase.Port
-	dbName := Config.Datebase.Name
-	dbCharset := Config.Datebase.Charset
+	dbType := config.Database.Type
+	dbUser := config.Database.User
+	dbPwd := config.Database.Pwd
+	dbHost := config.Database.Host
+	dbPort := config.Database.Port
+	dbName := config.Database.Name
+	dbCharset := config.Database.Charset
 
-	router.AppPort = &Config.App.Port
+	router.AppPort = &config.App.Port
+	router.AuthCode  = &config.Database.AuthCode
 
-	fmt.Println("port",router.AppPort)
-
+	util.AuthCode =  &config.Database.AuthCode
 	//连接sql
 	Db, err = gorm.Open(dbType, dbUser+":"+dbPwd+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
+
+	Db.SingularTable(true)
+
+	gorm.DefaultTableNameHandler = func (db *gorm.DB, defaultTableName string) string  {
+		return config.Database.Prefix + defaultTableName
+	}
+
+	router.Db = Db
 	if err != nil {
 		panic(err)
 		defer Db.Close()

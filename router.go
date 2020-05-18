@@ -2,10 +2,10 @@ package cmf
 
 import (
 	"fmt"
-	"github.com/gincmf/cmf/controller"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/gincmf/cmf/controller"
 	"github.com/gincmf/cmf/router"
 	"io/ioutil"
 	"net/http"
@@ -31,12 +31,12 @@ var routerMap []routerMapStruct
 var TemplateMap TemplateMapStruct
 
 var Engine *gin.Engine
-var theme,path,themePath string
+var theme, path, themePath string
 
 func Start() {
 	//注册路由
 	Engine = gin.Default()
-	store := cookie.NewStore([]byte("secret"))
+	store := cookie.NewStore([]byte(Conf().Database.AuthCode))
 	Engine.Use(sessions.Sessions("session", store))
 	LoadTemplate() //加载模板
 
@@ -58,14 +58,14 @@ func Start() {
 
 	//扫描主题路径
 	files := scanThemeDir(path)
-	for _,t := range files{
+	for _, t := range files {
 		//扫描项目模板下的全部模块
-		Engine.StaticFS(t.name +"/" + "assets", http.Dir(t.path + "/public/assets" ))
+		Engine.StaticFS(t.name+"/"+"assets", http.Dir(t.path+"/public/assets"))
 	}
 	//加载uploads静态资源
-	Engine.StaticFS("uploads", http.Dir("public/uploads" ))
+	Engine.StaticFS("uploads", http.Dir("public/uploads"))
 	//配置路由端口
-	Engine.Run(":" + Config.App.Port) // 监听并在 0.0.0.0 上启动服务
+	Engine.Run(":" + config.App.Port) // 监听并在 0.0.0.0 上启动服务
 }
 
 //抛出对外注册路由方法
@@ -78,15 +78,15 @@ func Post(relativePath string, handlers ...gin.HandlerFunc) {
 }
 
 //处理资源控制器
-func Rest(relativePath string, restController controller.RestControllerInterface,handlers ...gin.HandlerFunc) {
+func Rest(relativePath string, restController controller.RestControllerInterface, handlers ...gin.HandlerFunc) {
 	if relativePath == "/" {
 		routerMap = append(routerMap, routerMapStruct{"/api", []gin.HandlerFunc{restController.Get}, "GET"})
-	} else{
-		routerMap = append(routerMap, routerMapStruct{"/api"+ relativePath, append(handlers,restController.Get), "GET"})                               //查询全部
-		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath + ":id", append(handlers,restController.Show), "GET"})       //查询一条
-		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath + ":id/edit", append(handlers,restController.Edit), "POST"}) //编辑一条
-		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers,restController.Store), "POST"})             //新增一条
-		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath + ":id", append(handlers,restController.Delete), "DELETE"})  //删除一条
+	} else {
+		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Get), "GET"})                //查询全部
+		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath + ":id", append(handlers, restController.Show), "GET"})       //查询一条
+		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath + ":id/edit", append(handlers, restController.Edit), "POST"}) //编辑一条
+		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Store), "POST"})             //新增一条
+		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath + ":id", append(handlers, restController.Delete), "DELETE"})  //删除一条
 	}
 }
 
@@ -99,34 +99,34 @@ func LoadTemplate() {
 	Engine.LoadHTMLFiles(files...)
 }
 
-type themeDirStruct struct{
+type themeDirStruct struct {
 	name string
 	path string
 }
 
-func scanThemeDir(path string) ([]themeDirStruct){
-	dirs,_ := ioutil.ReadDir(path)
+func scanThemeDir(path string) []themeDirStruct {
+	dirs, _ := ioutil.ReadDir(path)
 	var dirList []themeDirStruct
 
-	for _,dir := range dirs{
+	for _, dir := range dirs {
 		if dir.IsDir() {
-			dirList = append(dirList, themeDirStruct{dir.Name(),strings.TrimRight(path + dir.Name(),"/") + "/"} )
+			dirList = append(dirList, themeDirStruct{dir.Name(), strings.TrimRight(path+dir.Name(), "/") + "/"})
 		}
 	}
 	return dirList
 }
 
-func scanDir(path string) ([]string,[]string){
-	dirs,_ := ioutil.ReadDir(path)
-	var dirList,fileList []string
-	for _,dir := range dirs{
+func scanDir(path string) ([]string, []string) {
+	dirs, _ := ioutil.ReadDir(path)
+	var dirList, fileList []string
+	for _, dir := range dirs {
 		if dir.IsDir() {
-			dirList = append(dirList,strings.TrimRight(path + dir.Name(),"/") + "/")
-		}else {
-			fileList = append(fileList,path + dir.Name())
+			dirList = append(dirList, strings.TrimRight(path+dir.Name(), "/")+"/")
+		} else {
+			fileList = append(fileList, path+dir.Name())
 		}
 	}
-	return dirList,fileList
+	return dirList, fileList
 }
 
 // 递归扫描目录
@@ -138,13 +138,13 @@ func scanFiles(dirName string) []string {
 	var fileList []string
 	for _, file := range files {
 		if file.IsDir() {
-			subList := scanFiles(strings.TrimRight(dirName + file.Name(),"/") + "/")
-			fileList = append(fileList,subList...)
+			subList := scanFiles(strings.TrimRight(dirName+file.Name(), "/") + "/")
+			fileList = append(fileList, subList...)
 
 		} else {
 			suffix := strings.Split(file.Name(), ".")
 			if len(suffix) > 1 && suffix[1] == "html" {
-				fileList = append(fileList,dirName + file.Name())
+				fileList = append(fileList, dirName+file.Name())
 			}
 		}
 	}

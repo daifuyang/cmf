@@ -2,12 +2,14 @@ package router
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/gincmf/cmf/controller"
+	"github.com/gincmf/cmf/util"
+	"github.com/jinzhu/gorm"
 	"golang.org/x/oauth2"
 	"gopkg.in/oauth2.v3/generates"
 	"gopkg.in/oauth2.v3/manage"
@@ -19,26 +21,37 @@ import (
 )
 
 var (
-	AppPort *string
+	AppPort       *string
+	AuthCode      *string
+	Db            *gorm.DB
 	authServerURL = "http://localhost:"
-	globalToken *oauth2.Token
-	rc controller.RestControllerStruct
-	Srv *server.Server
+	globalToken   *oauth2.Token
+	rc            controller.RestControllerStruct
+	Srv           *server.Server
+	Session       sessions.Session
 )
+
+type User struct {
+	Id           int
+	UserType     int
+	Gender       int
+	Birthday     int
+	UserLogin    string `gorm:"type:varchar(60);not null"`
+	UserPass     string `gorm:"type:varchar(64);not null"`
+	UserNickname string
+	Avatar       string
+	Signature    string
+	Mobile       string
+}
 
 func RegisterOauthRouter(e *gin.Engine) {
 
-	fmt.Println("AppPort",*AppPort)
-
+	fmt.Println("AppPort", *AppPort)
 	authServerURL += *AppPort
-
-	h := md5.New()
-	h.Write([]byte("gincmf"))
-	md5str := hex.EncodeToString(h.Sum(nil))
 
 	config := oauth2.Config{
 		ClientID:     "1",
-		ClientSecret: md5str,
+		ClientSecret: util.GetMd5(*AuthCode),
 		Scopes:       []string{"all"},
 		RedirectURL:  authServerURL,
 		Endpoint: oauth2.Endpoint{
@@ -54,12 +67,11 @@ func RegisterOauthRouter(e *gin.Engine) {
 	manager.MustTokenStorage(store.NewMemoryTokenStore())
 
 	// generate jwt access token
-
-	accessToken := generates.NewJWTAccessGenerate([]byte("gincmf"), jwt.SigningMethodHS512)
+	accessToken := generates.NewJWTAccessGenerate([]byte("gincmf"+*AuthCode), jwt.SigningMethodHS512)
 	manager.MapAccessGenerate(accessToken)
 	clientStore := store.NewClientStore()
 	clientStore.Set(config.ClientID, &models.Client{
-		ID:     config.ClientID,
+		ID: config.ClientID,
 		Secret: config.ClientSecret,
 		Domain: authServerURL,
 	})
@@ -67,34 +79,40 @@ func RegisterOauthRouter(e *gin.Engine) {
 	manager.MapClientStorage(clientStore)
 	Srv = server.NewServer(server.NewConfig(), manager)
 	Srv.SetPasswordAuthorizationHandler(func(username, password string) (userID string, err error) {
-		if username == "admin" && password == "123456" {
-			 userID = "admin"
+		u := &User{}
+		userResult := Db.First(u, "user_login = ?", username) // 查询
+		userID = ""
+		if !userResult.RecordNotFound() {
+			//验证密码
+			if util.GetMd5(password) == u.UserPass {
+				userID = u.UserLogin
+			}
 		}
-		return userID,nil
+		return userID, nil
 	})
 
-	e.GET("api/oauth/token",func(c *gin.Context){
+	e.GET("api/oauth/token", func(c *gin.Context) {
 
 		username := c.Query("username")
 		password := c.Query("password")
 
 		fn := Srv.PasswordAuthorizationHandler
-		userID,err := fn(username,password)
+		userID, err := fn(username, password)
 
 		if userID == "" {
-			rc.Error(c,"userid不能为空！")
+			rc.Error(c, "账号密码不正确！")
 			return
 		}
 
 		req := &server.AuthorizeRequest{
-			RedirectURI:  config.RedirectURL,
-			ResponseType: "code",
-			ClientID:     config.ClientID,
-			State:        "jwt",
-			Scope:        "all",
+			RedirectURI:    config.RedirectURL,
+			ResponseType:   "code",
+			ClientID:       config.ClientID,
+			State:          "jwt",
+			Scope:          "all",
 			UserID:         userID,
-			AccessTokenExp: 5 * time.Hour,
-			Request:      c.Request,
+			AccessTokenExp: 2 * time.Hour,
+			Request:        c.Request,
 		}
 
 		ti, err := Srv.GetAuthorizeToken(req)
@@ -110,10 +128,39 @@ func RegisterOauthRouter(e *gin.Engine) {
 		}
 
 		globalToken = token
-		c.JSON(http.StatusOK,token)
-		})
+		c.JSON(http.StatusOK, token)
+	})
 
-	e.POST("/token",func(c *gin.Context) {
+	e.GET("api/oauth/refresh", func(c *gin.Context) {
+		if globalToken == nil {
+			rc.Error(c, "非法访问！")
+			return
+		}
+
+		username := c.Query("username")
+		password := c.Query("password")
+
+		fn := Srv.PasswordAuthorizationHandler
+		userID, err := fn(username, password)
+
+		if userID == "" {
+			rc.Error(c, "账号密码不正确！")
+			return
+		}
+
+		globalToken.Expiry = time.Now()
+		token, err := config.TokenSource(context.Background(), globalToken).Token()
+		if err != nil {
+			rc.Error(c, err.Error())
+		}
+
+		globalToken = token
+		e := json.NewEncoder(c.Writer)
+		e.SetIndent("", "  ")
+		e.Encode(token)
+	})
+
+	e.POST("/token", func(c *gin.Context) {
 		fmt.Println("token request")
 		err := Srv.HandleTokenRequest(c.Writer, c.Request)
 		if err != nil {
