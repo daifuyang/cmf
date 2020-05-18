@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/gincmf/cmf/controller"
 	"github.com/gincmf/cmf/util"
@@ -28,7 +27,6 @@ var (
 	globalToken   *oauth2.Token
 	rc            controller.RestControllerStruct
 	Srv           *server.Server
-	Session       sessions.Session
 )
 
 type User struct {

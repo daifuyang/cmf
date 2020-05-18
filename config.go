@@ -63,26 +63,7 @@ func Initialize(filePath string) {
 }
 
 func Conf() *ConfigDefaultStruct {
-
-	//if attr == "" {
-	//	panic(errors.New("属性不能为空！"))
-	//}
-	//attrArr := strings.Split(attr,".")
-	//fmt.Println("attrArr",attrArr)
-	//refc := reflect.ValueOf(config)
-	//
-	//for k,v := range attrArr{
-	//	fmt.Println(k,v)
-	//	refc = refc.FieldByName(v)
-	//	fmt.Println(v,refc.Type())
-	//}
-	//
-	//fmt.Println("value：",refc)
-	//
-	//return refc.String()
-
 	return &config
-
 }
 
 
