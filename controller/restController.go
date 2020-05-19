@@ -13,7 +13,7 @@ type RestControllerInterface interface {
 	Delete(c *gin.Context)
 }
 
-type RestControllerStruct struct {
+type RestController struct {
 }
 
 type returnData struct {
@@ -22,16 +22,14 @@ type returnData struct {
 	Data interface{} `json:"data"`
 }
 
-func (r RestControllerStruct) Success(c *gin.Context,msg string, data interface{}) {
+func (r RestController) Success(c *gin.Context,msg string, data interface{}) {
 	var result returnData
 	result = returnData{1, msg,data}
 	c.JSON(http.StatusOK, result)
-	c.Abort()
 }
 
-func (r RestControllerStruct) Error(c *gin.Context,msg string, data ...interface{}) {
+func (r RestController) Error(c *gin.Context,msg string, data ...interface{}) {
 	var result returnData
 	result = returnData{0,msg,data}
 	c.JSON(http.StatusOK, result)
-	c.Abort()
 }

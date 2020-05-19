@@ -25,7 +25,7 @@ var (
 	Db            *gorm.DB
 	authServerURL = "http://localhost:"
 	globalToken   *oauth2.Token
-	rc            controller.RestControllerStruct
+	rc            controller.RestController
 	Srv           *server.Server
 )
 
