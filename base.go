@@ -1,7 +1,6 @@
 package cmf
 
 import (
-	"fmt"
 	"github.com/gincmf/cmf/router"
 	"github.com/gincmf/cmf/util"
 	"github.com/jinzhu/gorm"
@@ -17,8 +16,9 @@ var err error
 //2020 05 09
 //初始化默认设置
 func initDefault() {
-	fmt.Println("核心初始化")
+
 	config := Conf()
+
 	//初始化配置信息
 	TemplateMap.Theme = config.Template.Theme
 	TemplateMap.ThemePath = config.Template.ThemePath

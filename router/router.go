@@ -44,12 +44,15 @@ type User struct {
 
 func RegisterOauthRouter(e *gin.Engine) {
 
-	fmt.Println("AppPort", *AppPort)
 	authServerURL += *AppPort
+
+	clientSecret := util.GetMd5(*AuthCode)
+
+	fmt.Println("clientSecret",clientSecret)
 
 	config := oauth2.Config{
 		ClientID:     "1",
-		ClientSecret: util.GetMd5(*AuthCode),
+		ClientSecret: clientSecret,
 		Scopes:       []string{"all"},
 		RedirectURL:  authServerURL,
 		Endpoint: oauth2.Endpoint{
@@ -89,10 +92,10 @@ func RegisterOauthRouter(e *gin.Engine) {
 		return userID, nil
 	})
 
-	e.GET("api/oauth/token", func(c *gin.Context) {
+	e.POST("api/oauth/token", func(c *gin.Context) {
 
-		username := c.Query("username")
-		password := c.Query("password")
+		username := c.PostForm("username")
+		password := c.PostForm("password")
 
 		fn := Srv.PasswordAuthorizationHandler
 		userID, err := fn(username, password)

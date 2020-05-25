@@ -21,7 +21,7 @@ type DatabaseStruct struct {
 	Port    string `json:"hostport"`
 	Charset string `json:"charset"`
 	Prefix  string `json:"prefix"`
-	AuthCode string `json:"auth_code"`
+	AuthCode string `json:"authcode"`
 }
 
 //ConfigDefault 定义了配置文件初始结构
@@ -47,8 +47,6 @@ func (conf *ConfigDataStruct) init(filePath string, v interface{}) {
 		fmt.Println("ReadFile err", err)
 		return
 	}
-
-	fmt.Println("data",string(data[:]))
 
 	//读取的数据为json格式，需要进行解码
 	err = json.Unmarshal(data, v)
