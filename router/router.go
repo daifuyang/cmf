@@ -16,6 +16,7 @@ import (
 	"gopkg.in/oauth2.v3/server"
 	"gopkg.in/oauth2.v3/store"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -96,6 +97,18 @@ func RegisterOauthRouter(e *gin.Engine) {
 
 		username := c.PostForm("username")
 		password := c.PostForm("password")
+		tokenExp := c.DefaultPostForm("expire","2")
+
+		exp,err := strconv.Atoi(tokenExp)
+
+		if err != nil {
+			fmt.Println("err",err.Error())
+			rc.Error(c, "失效时间应该是整数，单位为小时！")
+			return
+		}
+
+		fmt.Println("username",username)
+		fmt.Println("password",password)
 
 		fn := Srv.PasswordAuthorizationHandler
 		userID, err := fn(username, password)
@@ -112,7 +125,7 @@ func RegisterOauthRouter(e *gin.Engine) {
 			State:          "jwt",
 			Scope:          "all",
 			UserID:         userID,
-			AccessTokenExp: 2 * time.Hour,
+			AccessTokenExp: time.Duration(exp) * time.Hour,
 			Request:        c.Request,
 		}
 
@@ -132,14 +145,14 @@ func RegisterOauthRouter(e *gin.Engine) {
 		c.JSON(http.StatusOK, token)
 	})
 
-	e.GET("api/oauth/refresh", func(c *gin.Context) {
+	e.POST("api/oauth/refresh", func(c *gin.Context) {
 		if globalToken == nil {
 			rc.Error(c, "非法访问！")
 			return
 		}
 
-		username := c.Query("username")
-		password := c.Query("password")
+		username := c.PostForm("username")
+		password := c.PostForm("password")
 
 		fn := Srv.PasswordAuthorizationHandler
 		userID, err := fn(username, password)
