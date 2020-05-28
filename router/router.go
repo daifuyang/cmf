@@ -103,7 +103,7 @@ func RegisterOauthRouter(e *gin.Engine) {
 
 		if err != nil {
 			fmt.Println("err",err.Error())
-			rc.Error(c, "失效时间应该是整数，单位为小时！")
+			rc.Error(c, "失效时间应该是整数，单位为小时！",nil)
 			return
 		}
 
@@ -114,7 +114,7 @@ func RegisterOauthRouter(e *gin.Engine) {
 		userID, err := fn(username, password)
 
 		if userID == "" {
-			rc.Error(c, "账号密码不正确！")
+			rc.Error(c, "账号密码不正确！",nil)
 			return
 		}
 
@@ -147,7 +147,7 @@ func RegisterOauthRouter(e *gin.Engine) {
 
 	e.POST("api/oauth/refresh", func(c *gin.Context) {
 		if globalToken == nil {
-			rc.Error(c, "非法访问！")
+			rc.Error(c, "非法访问！",nil)
 			return
 		}
 
@@ -158,14 +158,14 @@ func RegisterOauthRouter(e *gin.Engine) {
 		userID, err := fn(username, password)
 
 		if userID == "" {
-			rc.Error(c, "账号密码不正确！")
+			rc.Error(c, "账号密码不正确！",nil)
 			return
 		}
 
 		globalToken.Expiry = time.Now()
 		token, err := config.TokenSource(context.Background(), globalToken).Token()
 		if err != nil {
-			rc.Error(c, err.Error())
+			rc.Error(c, err.Error(),nil)
 		}
 
 		globalToken = token

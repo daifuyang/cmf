@@ -28,7 +28,7 @@ func (r RestController) Success(c *gin.Context,msg string, data interface{}) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (r RestController) Error(c *gin.Context,msg string, data ...interface{}) {
+func (r RestController) Error(c *gin.Context,msg string, data interface{}) {
 	var result returnData
 	result = returnData{0,msg,data}
 	c.JSON(http.StatusOK, result)
