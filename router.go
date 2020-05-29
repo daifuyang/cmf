@@ -85,7 +85,7 @@ func Rest(relativePath string, restController controller.RestControllerInterface
 		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Get), "GET"})                //查询全部
 		rPath := strings.TrimRight(relativePath, "/") + "/"
 		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Show), "GET"})       //查询一条
-		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id/edit", append(handlers, restController.Edit), "POST"}) //编辑一条
+		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Edit), "POST"}) //编辑一条
 		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Store), "POST"})             //新增一条
 		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Delete), "DELETE"})  //删除一条
 	}
