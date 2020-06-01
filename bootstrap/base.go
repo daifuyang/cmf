@@ -1,7 +1,6 @@
-package cmf
+package bootstrap
 
 import (
-	"github.com/gincmf/cmf/router"
 	"github.com/gincmf/cmf/util"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -33,10 +32,8 @@ func initDefault() {
 	dbName := config.Database.Name
 	dbCharset := config.Database.Charset
 
-	router.AppPort = &config.App.Port
-	router.AuthCode  = &config.Database.AuthCode
+	util.AuthCode = &config.Database.AuthCode
 
-	util.AuthCode =  &config.Database.AuthCode
 	//连接sql
 	Db, err = gorm.Open(dbType, dbUser+":"+dbPwd+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
 
@@ -46,7 +43,6 @@ func initDefault() {
 		return config.Database.Prefix + defaultTableName
 	}
 
-	router.Db = Db
 	if err != nil {
 		panic(err)
 		defer Db.Close()

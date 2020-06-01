@@ -1,4 +1,4 @@
-package cmf
+package bootstrap
 
 import (
 	"fmt"
@@ -40,7 +40,7 @@ func Start() {
 	Engine.Use(sessions.Sessions("session", store))
 	LoadTemplate() //加载模板
 
-	router.RegisterOauthRouter(Engine) //注册OAuth2.0验证
+	router.RegisterOauthRouter(Engine,Db,Conf().App.Port,Conf().Database.AuthCode) //注册OAuth2.0验证
 
 	for _, router := range routerMap {
 		switch router.method {
@@ -82,12 +82,12 @@ func Rest(relativePath string, restController controller.RestControllerInterface
 	if relativePath == "/" {
 		routerMap = append(routerMap, routerMapStruct{"/api", []gin.HandlerFunc{restController.Get}, "GET"})
 	} else {
-		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Get), "GET"})                //查询全部
+		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Get), "GET"}) //查询全部
 		rPath := strings.TrimRight(relativePath, "/") + "/"
-		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Show), "GET"})       //查询一条
-		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Edit), "POST"}) //编辑一条
-		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Store), "POST"})             //新增一条
-		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Delete), "DELETE"})  //删除一条
+		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Show), "GET"})      //查询一条
+		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Edit), "POST"})     //编辑一条
+		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Store), "POST"})     //新增一条
+		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Delete), "DELETE"}) //删除一条
 	}
 }
 

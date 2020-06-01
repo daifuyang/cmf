@@ -14,6 +14,7 @@ type RestControllerInterface interface {
 }
 
 type RestController struct {
+
 }
 
 type returnData struct {

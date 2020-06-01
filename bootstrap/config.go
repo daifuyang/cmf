@@ -1,4 +1,4 @@
-package cmf
+package bootstrap
 
 import (
 	"encoding/json"

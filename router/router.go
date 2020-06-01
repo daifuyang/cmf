@@ -21,9 +21,6 @@ import (
 )
 
 var (
-	AppPort       *string
-	AuthCode      *string
-	Db            *gorm.DB
 	authServerURL = "http://localhost:"
 	globalToken   *oauth2.Token
 	rc            controller.RestController
@@ -43,13 +40,13 @@ type User struct {
 	Mobile       string
 }
 
-func RegisterOauthRouter(e *gin.Engine) {
+func RegisterOauthRouter(e *gin.Engine,db *gorm.DB, appPort string, authCode string) {
 
-	authServerURL += *AppPort
+	authServerURL += appPort
 
-	clientSecret := util.GetMd5(*AuthCode)
+	clientSecret := util.GetMd5(authCode)
 
-	fmt.Println("clientSecret",clientSecret)
+	fmt.Println("clientSecret", clientSecret)
 
 	config := oauth2.Config{
 		ClientID:     "1",
@@ -69,11 +66,11 @@ func RegisterOauthRouter(e *gin.Engine) {
 	manager.MustTokenStorage(store.NewMemoryTokenStore())
 
 	// generate jwt access token
-	accessToken := generates.NewJWTAccessGenerate([]byte("gincmf"+*AuthCode), jwt.SigningMethodHS512)
+	accessToken := generates.NewJWTAccessGenerate([]byte("gincmf"+authCode), jwt.SigningMethodHS512)
 	manager.MapAccessGenerate(accessToken)
 	clientStore := store.NewClientStore()
 	clientStore.Set(config.ClientID, &models.Client{
-		ID: config.ClientID,
+		ID:     config.ClientID,
 		Secret: config.ClientSecret,
 		Domain: authServerURL,
 	})
@@ -82,7 +79,7 @@ func RegisterOauthRouter(e *gin.Engine) {
 	Srv = server.NewServer(server.NewConfig(), manager)
 	Srv.SetPasswordAuthorizationHandler(func(username, password string) (userID string, err error) {
 		u := &User{}
-		userResult := Db.First(u, "user_login = ?", username) // 查询
+		userResult := db.First(u, "user_login = ?", username) // 查询
 		userID = ""
 		if !userResult.RecordNotFound() {
 			//验证密码
@@ -97,24 +94,24 @@ func RegisterOauthRouter(e *gin.Engine) {
 
 		username := c.PostForm("username")
 		password := c.PostForm("password")
-		tokenExp := c.DefaultPostForm("expire","2")
+		tokenExp := c.DefaultPostForm("expire", "2")
 
-		exp,err := strconv.Atoi(tokenExp)
+		exp, err := strconv.Atoi(tokenExp)
 
 		if err != nil {
-			fmt.Println("err",err.Error())
-			rc.Error(c, "失效时间应该是整数，单位为小时！",nil)
+			fmt.Println("err", err.Error())
+			rc.Error(c, "失效时间应该是整数，单位为小时！", nil)
 			return
 		}
 
-		fmt.Println("username",username)
-		fmt.Println("password",password)
+		fmt.Println("username", username)
+		fmt.Println("password", password)
 
 		fn := Srv.PasswordAuthorizationHandler
 		userID, err := fn(username, password)
 
 		if userID == "" {
-			rc.Error(c, "账号密码不正确！",nil)
+			rc.Error(c, "账号密码不正确！", nil)
 			return
 		}
 
@@ -147,7 +144,7 @@ func RegisterOauthRouter(e *gin.Engine) {
 
 	e.POST("api/oauth/refresh", func(c *gin.Context) {
 		if globalToken == nil {
-			rc.Error(c, "非法访问！",nil)
+			rc.Error(c, "非法访问！", nil)
 			return
 		}
 
@@ -158,14 +155,14 @@ func RegisterOauthRouter(e *gin.Engine) {
 		userID, err := fn(username, password)
 
 		if userID == "" {
-			rc.Error(c, "账号密码不正确！",nil)
+			rc.Error(c, "账号密码不正确！", nil)
 			return
 		}
 
 		globalToken.Expiry = time.Now()
 		token, err := config.TokenSource(context.Background(), globalToken).Token()
 		if err != nil {
-			rc.Error(c, err.Error(),nil)
+			rc.Error(c, err.Error(), nil)
 		}
 
 		globalToken = token
