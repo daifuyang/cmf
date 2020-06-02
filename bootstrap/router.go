@@ -60,7 +60,7 @@ func Start() {
 	files := scanThemeDir(path)
 	for _, t := range files {
 		//扫描项目模板下的全部模块
-		Engine.StaticFS(t.name+"/"+"assets", http.Dir(t.path+"/public/assets"))
+		Engine.StaticFS( path + "/" + t.name+"/"+"assets", http.Dir(t.path+"/public/assets"))
 	}
 	//加载uploads静态资源
 	Engine.StaticFS("uploads", http.Dir("public/uploads"))
