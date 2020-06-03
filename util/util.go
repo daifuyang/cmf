@@ -13,3 +13,4 @@ func GetMd5(s string) string {
 	h.Write([]byte(*AuthCode + s))
 	return hex.EncodeToString(h.Sum(nil))
 }
+

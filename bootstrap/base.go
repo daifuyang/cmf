@@ -24,27 +24,30 @@ func initDefault() {
 	TemplateMap.Glob = config.Template.Glob
 	TemplateMap.Static = config.Template.Static
 
-	dbType := config.Database.Type
-	dbUser := config.Database.User
-	dbPwd := config.Database.Pwd
 	dbHost := config.Database.Host
-	dbPort := config.Database.Port
-	dbName := config.Database.Name
-	dbCharset := config.Database.Charset
 
 	util.AuthCode = &config.Database.AuthCode
 
-	//连接sql
-	Db, err = gorm.Open(dbType, dbUser+":"+dbPwd+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
+	if dbHost != "" {
+		dbType := config.Database.Type
+		dbUser := config.Database.User
+		dbPwd := config.Database.Pwd
+		dbPort := config.Database.Port
+		dbName := config.Database.Name
+		dbCharset := config.Database.Charset
 
-	Db.SingularTable(true)
+		//连接sql
+		Db, err = gorm.Open(dbType, dbUser+":"+dbPwd+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
 
-	gorm.DefaultTableNameHandler = func (db *gorm.DB, defaultTableName string) string  {
-		return config.Database.Prefix + defaultTableName
-	}
+		Db.SingularTable(true)
 
-	if err != nil {
-		panic(err)
-		defer Db.Close()
+		gorm.DefaultTableNameHandler = func (db *gorm.DB, defaultTableName string) string  {
+			return config.Database.Prefix + defaultTableName
+		}
+
+		if err != nil {
+			panic(err)
+			defer Db.Close()
+		}
 	}
 }
