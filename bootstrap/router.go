@@ -63,7 +63,7 @@ func Start() {
 		Engine.StaticFS( path + "/" + t.name+"/"+"assets", http.Dir(t.path+"/public/assets"))
 	}
 	//加载uploads静态资源
-	Engine.StaticFS("uploads", http.Dir("public/uploads"))
+	Engine.StaticFS("public/uploads", http.Dir("public/uploads"))
 	//配置路由端口
 	Engine.Run(":" + config.App.Port) // 监听并在 0.0.0.0 上启动服务
 }

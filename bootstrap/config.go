@@ -29,6 +29,7 @@ type ConfigDefaultStruct struct {
 	App      AppStruct
 	Template TemplateMapStruct `json:"template"`
 	Database DatabaseStruct
+	Token string
 }
 
 //ConfigData 定义一个空结构体
