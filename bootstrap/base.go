@@ -1,13 +1,14 @@
 package bootstrap
 
 import (
+	"database/sql"
+	"fmt"
 	"github.com/gincmf/cmf/util"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 var Db *gorm.DB
-
 
 //定义数据库类
 var err error
@@ -36,18 +37,35 @@ func initDefault() {
 		dbName := config.Database.Name
 		dbCharset := config.Database.Charset
 
-		//连接sql
-		Db, err = gorm.Open(dbType, dbUser+":"+dbPwd+"@tcp("+dbHost+":"+dbPort+")/"+dbName+"?charset="+dbCharset)
-
-		Db.SingularTable(true)
-
-		gorm.DefaultTableNameHandler = func (db *gorm.DB, defaultTableName string) string  {
-			return config.Database.Prefix + defaultTableName
+		//创建不存在的数据库
+		dataSource := dbUser + ":" + dbPwd + "@tcp(" + dbHost + ":" + dbPort + ")/"
+		tempDb, tempErr := sql.Open(dbType, dataSource)
+		if tempErr != nil {
+			panic(err)
 		}
+
+		defer tempDb.Close()
+
+		_, err = tempDb.Exec("CREATE DATABASE IF NOT EXISTS " + dbName)
+		if err != nil {
+			panic(err)
+		}
+		tempDb.Close()
+
+		fmt.Println("创建数据库表成功！")
+
+		//连接sql
+		Db, err = gorm.Open(dbType, dataSource+dbName+"?charset="+dbCharset)
 
 		if err != nil {
 			panic(err)
 			defer Db.Close()
+		}
+
+		Db.SingularTable(true)
+
+		gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
+			return config.Database.Prefix + defaultTableName
 		}
 	}
 }

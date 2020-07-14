@@ -13,14 +13,16 @@ type RestControllerInterface interface {
 	Delete(c *gin.Context)
 }
 
-type RestController struct {
-
-}
+type RestController struct {}
 
 type returnData struct {
 	Code int    `json:"code"`
 	Msg  string `json:"msg"`
 	Data interface{} `json:"data"`
+}
+
+func (r RestController) Forbidden(c *gin.Context) {
+	c.String(http.StatusNotFound,"页面不存在！")
 }
 
 func (r RestController) Success(c *gin.Context,msg string, data interface{}) {

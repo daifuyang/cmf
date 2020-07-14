@@ -40,6 +40,7 @@ type User struct {
 	Mobile       string
 }
 
+// 注册oauth授权
 func RegisterOauthRouter(e *gin.Engine,db *gorm.DB, appPort string, authCode string) {
 
 	authServerURL += appPort
@@ -80,11 +81,10 @@ func RegisterOauthRouter(e *gin.Engine,db *gorm.DB, appPort string, authCode str
 	Srv.SetPasswordAuthorizationHandler(func(username, password string) (userID string, err error) {
 		u := &User{}
 		userResult := db.First(u, "user_login = ?", username) // 查询
-		userID = ""
 		if !userResult.RecordNotFound() {
 			//验证密码
 			if util.GetMd5(password) == u.UserPass {
-				userID = u.UserLogin
+				userID = strconv.Itoa(u.Id)
 			}
 		}
 		return userID, nil

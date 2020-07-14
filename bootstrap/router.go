@@ -19,6 +19,12 @@ type routerMapStruct struct {
 	method       string
 }
 
+// 路由组
+type groupMapStruct struct {
+	group string
+	routerMap []routerMapStruct
+}
+
 //定义Template结构体
 type TemplateMapStruct struct {
 	Theme     string `json:"theme"`
@@ -28,6 +34,7 @@ type TemplateMapStruct struct {
 }
 
 var routerMap []routerMapStruct
+var groupMap map[string]groupMapStruct
 var TemplateMap TemplateMapStruct
 
 var Engine *gin.Engine
@@ -40,7 +47,7 @@ func Start() {
 	Engine.Use(sessions.Sessions("session", store))
 	LoadTemplate() //加载模板
 
-	router.RegisterOauthRouter(Engine,Db,Conf().App.Port,Conf().Database.AuthCode) //注册OAuth2.0验证
+	router.RegisterOauthRouter(Engine, Db, Conf().App.Port, Conf().Database.AuthCode) //注册OAuth2.0验证
 
 	for _, router := range routerMap {
 		switch router.method {
@@ -60,7 +67,7 @@ func Start() {
 	files := scanThemeDir(path)
 	for _, t := range files {
 		//扫描项目模板下的全部模块
-		Engine.StaticFS( path + "/" + t.name+"/"+"assets", http.Dir(t.path+"/public/assets"))
+		Engine.StaticFS(path+"/"+t.name+"/"+"assets", http.Dir(t.path+"/public/assets"))
 	}
 	//加载uploads静态资源
 	Engine.StaticFS("public/uploads", http.Dir("public/uploads"))
@@ -87,8 +94,24 @@ func Rest(relativePath string, restController controller.RestControllerInterface
 		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Show), "GET"})      //查询一条
 		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Edit), "POST"})     //编辑一条
 		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Store), "POST"})     //新增一条
+		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Delete), "DELETE"})         //删除一条
 		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Delete), "DELETE"}) //删除一条
 	}
+}
+
+// 路由组
+func Group(relativePath string,handlers ... func()) groupMapStruct{
+	groupMap = make(map[string]groupMapStruct)
+	groupMap[relativePath] = groupMapStruct{
+		group: relativePath,
+		routerMap: []routerMapStruct{},
+	}
+	return groupMap[relativePath]
+}
+
+
+func (group *groupMapStruct) Rest( relativePath string, restController controller.RestControllerInterface, handlers ...gin.HandlerFunc)  {
+	routerMap = group.routerMap
 }
 
 func LoadTemplate() {
