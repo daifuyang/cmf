@@ -43,4 +43,4 @@ gincmf
 |_readme.md
 ### 下载gincmf代码
 推荐使用git下载  
-> git clone https://github.com/gimcmf/gincmf  
+> git clone https://github.com/gincmf/gincmf  

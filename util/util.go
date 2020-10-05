@@ -1,12 +1,37 @@
-package controller
+package util
 
 import (
 	"compress/gzip"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"github.com/gincmf/cmf/data"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 )
+
+var Conf *data.ConfigDefaultStruct
+
+func GetMd5(s string) string {
+	h := md5.New()
+	h.Write([]byte(Conf.Database.AuthCode + s))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func GetAbspath() string {
+	file, _ := exec.LookPath(os.Args[0])
+	path, _ := filepath.Abs(file)
+	index := strings.LastIndex(path, string(os.PathSeparator))
+	absPath := path[:index]
+	absPath += "/"
+	absPath = strings.Replace(absPath, "\\", "/", -1)
+	return absPath
+}
 
 //封装请求库
 func Request(method string,url string,body io.Reader,h map[string]string) (int, []byte){
@@ -26,11 +51,11 @@ func Request(method string,url string,body io.Reader,h map[string]string) (int, 
 		fmt.Println("http错误",err)
 	}
 
-	r.Header.Add("Host", "")
-	r.Header.Add("Connection","keep-alive")
-	r.Header.Add("Accept-Encoding","gzip, deflate, br")
-	r.Header.Add("Content-Length","0")
-	r.Header.Add("Cache-Control","no-cache")
+	//r.Header.Add("Host", "")
+	//r.Header.Add("Connection","keep-alive")
+	//r.Header.Add("Accept-Encoding","gzip, deflate, br")
+	//r.Header.Add("Content-Length","0")
+	//r.Header.Add("Cache-Control","no-cache")
 	for k,v := range h{
 		r.Header.Add(k,v)
 	}
@@ -54,7 +79,11 @@ func Request(method string,url string,body io.Reader,h map[string]string) (int, 
 			data = append(data,buf...)
 		}
 	default:
-		data, _ = ioutil.ReadAll(response.Body)
+		data, err = ioutil.ReadAll(response.Body)
+		if err != nil {
+			fmt.Println("err",err.Error())
+		}
 	}
 	return response.StatusCode,data
 }
+

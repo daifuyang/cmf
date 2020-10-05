@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"net/http"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 type RestControllerInterface interface {
@@ -13,16 +13,26 @@ type RestControllerInterface interface {
 	Delete(c *gin.Context)
 }
 
-type RestControllerStruct struct {
-}
+type RestController struct{}
 
 type returnData struct {
-	Code int    `json:"code"`
-	Msg  string `json:"msg"`
+	Code int         `json:"code"`
+	Msg  string      `json:"msg"`
+	Data interface{} `json:"data"`
 }
 
-func Success(c *gin.Context, msg string, data interface{}) {
-	var success returnData
-	success = returnData{1, msg}
-	c.JSON(http.StatusOK, success)
+func (r RestController) Forbidden(c *gin.Context) {
+	c.String(http.StatusNotFound, "页面不存在！")
+}
+
+func (r RestController) Success(c *gin.Context, msg string, data interface{}) {
+	var result returnData
+	result = returnData{1, msg, data}
+	c.JSON(http.StatusOK, result)
+}
+
+func (r RestController) Error(c *gin.Context, msg string, data interface{}) {
+	var result returnData
+	result = returnData{0, msg, data}
+	c.JSON(http.StatusOK, result)
 }
