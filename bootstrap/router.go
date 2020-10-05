@@ -6,62 +6,59 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/gincmf/cmf/controller"
-	"github.com/gincmf/cmf/router"
+	"github.com/gincmf/cmf/data"
+	swaggerFiles "github.com/swaggo/files"
+	"github.com/swaggo/gin-swagger"
+	"golang.org/x/sync/errgroup"
 	"io/ioutil"
 	"net/http"
 	"strings"
 )
 
-//定义路由结构体
-type routerMapStruct struct {
-	relativePath string
-	handlers     []gin.HandlerFunc
-	method       string
-}
+type groupMapStruct data.GroupMapStruct
 
-// 路由组
-type groupMapStruct struct {
-	group string
-	routerMap []routerMapStruct
-}
+var (
+	g errgroup.Group
+)
 
-//定义Template结构体
-type TemplateMapStruct struct {
-	Theme     string `json:"theme"`
-	ThemePath string `json:"themePath"`
-	Glob      string `json:"glob"`
-	Static    string `json:"static"`
-}
-
-var routerMap []routerMapStruct
-var groupMap map[string]groupMapStruct
-var TemplateMap TemplateMapStruct
+var routerMap []data.RouterMapStruct
+var TemplateMap data.TemplateMapStruct
 
 var Engine *gin.Engine
 var theme, path, themePath string
 
-func Start() {
+
+func Start(){
+	server := &http.Server{
+		Addr:         ":"+ config.App.Port,
+		Handler:      register(),
+	}
+
+	g.Go(func() error {
+		return server.ListenAndServe()
+	})
+
+	// 捕获err
+	if err := g.Wait(); err != nil {
+		fmt.Println("Get errors: ", err)
+	}else {
+		fmt.Println("Get all num successfully!")
+	}
+
+}
+
+func register () http.Handler{
 	//注册路由
 	Engine = gin.Default()
 	store := cookie.NewStore([]byte(Conf().Database.AuthCode))
-	Engine.Use(sessions.Sessions("session", store))
+	Engine.Use(sessions.Sessions("mySession", store))
+
 	LoadTemplate() //加载模板
+	Engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	rangeRouter(routerMap)
 
-	router.RegisterOauthRouter(Engine, Db, Conf().App.Port, Conf().Database.AuthCode) //注册OAuth2.0验证
-
-	for _, router := range routerMap {
-		switch router.method {
-		case "GET":
-			Engine.GET(router.relativePath, router.handlers...)
-		case "POST":
-			Engine.POST(router.relativePath, router.handlers...)
-		case "PUT":
-			Engine.PUT(router.relativePath, router.handlers...)
-		case "DELETE":
-			Engine.DELETE(router.relativePath, router.handlers...)
-		default:
-		}
-	}
+	// oauth.RegisterOauthRouter(Engine, Db, Conf()) //注册OAuth2.0验证
+	// oauth.RegisterTenantRouter(Engine, Db, Conf())
 
 	//扫描主题路径
 	files := scanThemeDir(path)
@@ -70,48 +67,86 @@ func Start() {
 		Engine.StaticFS(path+"/"+t.name+"/"+"assets", http.Dir(t.path+"/public/assets"))
 	}
 	//加载uploads静态资源
-	Engine.StaticFS("public/uploads", http.Dir("public/uploads"))
+	Engine.StaticFS("/uploads", http.Dir("public/uploads"))
+
 	//配置路由端口
-	Engine.Run(":" + config.App.Port) // 监听并在 0.0.0.0 上启动服务
+	return Engine
+}
+
+func rangeRouter(routerMap []data.RouterMapStruct) {
+	for _, router := range routerMap {
+		switch router.Method {
+		case "GET":
+			Engine.GET(router.RelativePath, router.Handlers...)
+		case "POST":
+			Engine.POST(router.RelativePath, router.Handlers...)
+		case "PUT":
+			Engine.PUT(router.RelativePath, router.Handlers...)
+		case "DELETE":
+			Engine.DELETE(router.RelativePath, router.Handlers...)
+		default:
+		}
+	}
 }
 
 //抛出对外注册路由方法
 func Get(relativePath string, handlers ...gin.HandlerFunc) {
-	routerMap = append(routerMap, routerMapStruct{relativePath, handlers, "GET"})
+	routerMap = append(routerMap, data.RouterMapStruct{RelativePath: relativePath, Handlers: handlers, Method: "GET"})
 }
 
 func Post(relativePath string, handlers ...gin.HandlerFunc) {
-	routerMap = append(routerMap, routerMapStruct{relativePath, handlers, "POST"})
+	routerMap = append(routerMap, data.RouterMapStruct{RelativePath: relativePath, Handlers: handlers, Method: "POST"})
 }
 
 //处理资源控制器
 func Rest(relativePath string, restController controller.RestControllerInterface, handlers ...gin.HandlerFunc) {
 	if relativePath == "/" {
-		routerMap = append(routerMap, routerMapStruct{"/api", []gin.HandlerFunc{restController.Get}, "GET"})
+		routerMap = append(routerMap,  data.RouterMapStruct{Handlers: []gin.HandlerFunc{restController.Get}, Method: "GET"})
 	} else {
-		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Get), "GET"}) //查询全部
+		routerMap = append(routerMap,  data.RouterMapStruct{RelativePath: relativePath, Handlers: append(handlers, restController.Get), Method: "GET"}) //查询全部
 		rPath := strings.TrimRight(relativePath, "/") + "/"
-		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Show), "GET"})      //查询一条
-		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Edit), "POST"})     //编辑一条
-		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Store), "POST"})     //新增一条
-		routerMap = append(routerMap, routerMapStruct{"/api" + relativePath, append(handlers, restController.Delete), "DELETE"})         //删除一条
-		routerMap = append(routerMap, routerMapStruct{"/api" + rPath + ":id", append(handlers, restController.Delete), "DELETE"}) //删除一条
+		routerMap = append(routerMap,  data.RouterMapStruct{RelativePath: rPath + ":id", Handlers: append(handlers, restController.Show), Method: "GET"})      //查询一条
+		routerMap = append(routerMap,  data.RouterMapStruct{RelativePath: rPath + ":id", Handlers: append(handlers, restController.Edit), Method: "POST"})     //编辑一条
+		routerMap = append(routerMap,  data.RouterMapStruct{RelativePath: relativePath, Handlers: append(handlers, restController.Store), Method: "POST"})     //新增一条
+		routerMap = append(routerMap,  data.RouterMapStruct{RelativePath: relativePath, Handlers: append(handlers, restController.Delete), Method: "DELETE"})  //删除一条
+		routerMap = append(routerMap,  data.RouterMapStruct{RelativePath: rPath + ":id", Handlers: append(handlers, restController.Delete), Method: "DELETE"}) //删除一条
 	}
 }
 
 // 路由组
-func Group(relativePath string,handlers ... func()) groupMapStruct{
-	groupMap = make(map[string]groupMapStruct)
-	groupMap[relativePath] = groupMapStruct{
-		group: relativePath,
-		routerMap: []routerMapStruct{},
+func Group(relativePath string, handlers... gin.HandlerFunc) groupMapStruct {
+	return  groupMapStruct{
+		RelativePath:     relativePath,
+		Handlers: handlers,
 	}
-	return groupMap[relativePath]
 }
 
+func (group *groupMapStruct) Rest(relativePath string, restController controller.RestControllerInterface, handlers ...gin.HandlerFunc) {
+	// 临时赋值
+	rPath := ""
+	if group.RelativePath != "" {
+		rPath = strings.TrimRight(group.RelativePath, "")
+	}
+	handlers = append(group.Handlers,handlers...)
+	Rest(rPath + relativePath,restController,handlers...)
+}
 
-func (group *groupMapStruct) Rest( relativePath string, restController controller.RestControllerInterface, handlers ...gin.HandlerFunc)  {
-	routerMap = group.routerMap
+func (group *groupMapStruct) Get(relativePath string, handlers ...gin.HandlerFunc) {
+	rPath := ""
+	if group.RelativePath != "" {
+		rPath = strings.TrimRight("/"+group.RelativePath, "/") + "/"
+	}
+	handlers = append(group.Handlers,handlers...)
+	Get(rPath + relativePath,handlers...)
+}
+
+func (group *groupMapStruct) Post(relativePath string, handlers ...gin.HandlerFunc) {
+	rPath := ""
+	if group.RelativePath != "" {
+		rPath = strings.TrimRight("/"+group.RelativePath, "/") + "/"
+	}
+	handlers = append(group.Handlers,handlers...)
+	Post(rPath + relativePath,handlers...)
 }
 
 func LoadTemplate() {

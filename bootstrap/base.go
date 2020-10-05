@@ -1,14 +1,16 @@
 package bootstrap
 
 import (
-	"database/sql"
 	"fmt"
+	"github.com/gincmf/cmf/model"
 	"github.com/gincmf/cmf/util"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/go-redis/redis"
+	"gorm.io/gorm"
 )
 
 var Db *gorm.DB
+
+var RedisDb *redis.Client
 
 //定义数据库类
 var err error
@@ -18,54 +20,35 @@ var err error
 func initDefault() {
 
 	config := Conf()
-
 	//初始化配置信息
 	TemplateMap.Theme = config.Template.Theme
 	TemplateMap.ThemePath = config.Template.ThemePath
 	TemplateMap.Glob = config.Template.Glob
 	TemplateMap.Static = config.Template.Static
-
 	dbHost := config.Database.Host
+	util.Conf = config
 
-	util.AuthCode = &config.Database.AuthCode
-
+	initClient()
 	if dbHost != "" {
-		dbType := config.Database.Type
-		dbUser := config.Database.User
-		dbPwd := config.Database.Pwd
-		dbPort := config.Database.Port
 		dbName := config.Database.Name
-		dbCharset := config.Database.Charset
-
 		//创建不存在的数据库
-		dataSource := dbUser + ":" + dbPwd + "@tcp(" + dbHost + ":" + dbPort + ")/"
-		tempDb, tempErr := sql.Open(dbType, dataSource)
-		if tempErr != nil {
-			panic(err)
-		}
-
-		defer tempDb.Close()
-
-		_, err = tempDb.Exec("CREATE DATABASE IF NOT EXISTS " + dbName)
-		if err != nil {
-			panic(err)
-		}
-		tempDb.Close()
-
+		model.CreateTable(dbName,config)
+		dsn := model.NewDsn(dbName,config)
+		Db = model.NewDb(dsn,config.Database.Prefix)
 		fmt.Println("创建数据库表成功！")
-
-		//连接sql
-		Db, err = gorm.Open(dbType, dataSource+dbName+"?charset="+dbCharset)
-
-		if err != nil {
-			panic(err)
-			defer Db.Close()
-		}
-
-		Db.SingularTable(true)
-
-		gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
-			return config.Database.Prefix + defaultTableName
-		}
 	}
+}
+
+func initClient() (err error) {
+	RedisDb = redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
+	_, err = RedisDb.Ping().Result()
+	if err != nil {
+		return err
+	}
+	return nil
 }
