@@ -17,7 +17,7 @@
 ## 使用手册
 * 注：该包为gincmf核心包，推荐预览地址：[gincmf](https://github.com/gimcmf/gincmf)   
 ### 安装教程
-第一步：git clone https://github.com/gimcmf/gincmf  
+第一步：git clone https://github.com/gincmf/gincmf  
 第二步：下载全部依赖 go get -u  
 第三步：运行 默认端口为8000
 ### 路径解释
@@ -43,4 +43,4 @@ gincmf
 |_readme.md
 ### 下载gincmf代码
 推荐使用git下载  
-> git clone https://github.com/gimcmf/gincmf  
+> git clone https://github.com/gincmf/gincmf  
