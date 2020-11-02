@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-var Conf *data.ConfigDefaultStruct
+var Conf *data.ConfigDefault
 
 func GetMd5(s string) string {
 	h := md5.New()

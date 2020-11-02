@@ -12,7 +12,9 @@ type ConfigDataStruct struct {
 }
 
 var configData ConfigDataStruct
-var config = &data.ConfigDefaultStruct{}
+
+var tempConfig = &data.TempConfig{}
+var config = &data.ConfigDefault{}
 
 //定义空结构体
 func (conf *ConfigDataStruct) init(filePath string, v interface{}) {
@@ -32,10 +34,28 @@ func (conf *ConfigDataStruct) init(filePath string, v interface{}) {
 }
 
 func Initialize(filePath string) {
+
+	configData.init(filePath, &tempConfig)
 	configData.init(filePath, &config)
+
+	if tempConfig.Database.Default == "" {
+		panic("默认数据库类型不能为空！")
+	}
+
+	config.Redis = tempConfig.Database.Redis
+
+	switch tempConfig.Database.Default {
+	case "mysql":
+		config.Database = tempConfig.Database.Mysql
+		break
+	default:
+		panic("数据库类型不支持或不存在！")
+		break
+	}
+
 	initDefault()
 }
 
-func Conf() *data.ConfigDefaultStruct {
+func Conf() *data.ConfigDefault {
 	return config
 }

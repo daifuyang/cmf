@@ -29,25 +29,28 @@ var theme, path, themePath string
 
 
 func Start(){
-	server := &http.Server{
-		Addr:         ":"+ config.App.Port,
-		Handler:      register(),
-	}
+	//server := &http.Server{
+	//	Addr:         ":"+ config.App.Port,
+	//	Handler:      register(),
+	//}
+	//
+	//g.Go(func() error {
+	//	return server.ListenAndServe()
+	//})
+	//
+	//// 捕获err
+	//if err := g.Wait(); err != nil {
+	//	fmt.Println("Get errors: ", err)
+	//}else {
+	//	fmt.Println("Get all num successfully!")
+	//}
 
-	g.Go(func() error {
-		return server.ListenAndServe()
-	})
 
-	// 捕获err
-	if err := g.Wait(); err != nil {
-		fmt.Println("Get errors: ", err)
-	}else {
-		fmt.Println("Get all num successfully!")
-	}
+	register()
 
 }
-
-func register () http.Handler{
+// func register () http.Handler{
+func register () {
 	//注册路由
 	Engine = gin.Default()
 	store := cookie.NewStore([]byte(Conf().Database.AuthCode))
@@ -69,8 +72,9 @@ func register () http.Handler{
 	//加载uploads静态资源
 	Engine.StaticFS("/uploads", http.Dir("public/uploads"))
 
+	Engine.Run(":"+ config.App.Port)
 	//配置路由端口
-	return Engine
+	// return Engine
 }
 
 func rangeRouter(routerMap []data.RouterMapStruct) {

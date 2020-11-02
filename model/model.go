@@ -19,7 +19,7 @@ import (
 
 var Db *gorm.DB
 
-func CreateTable(dbName string, conf *data.ConfigDefaultStruct) {
+func CreateTable(dbName string, conf *data.ConfigDefault) {
 	//创建不存在的数据库
 	dbUser := conf.Database.User
 	dbPwd := conf.Database.Pwd
@@ -41,7 +41,7 @@ func CreateTable(dbName string, conf *data.ConfigDefaultStruct) {
 	tempDb.Close()
 }
 
-func NewDsn(dbName string, conf *data.ConfigDefaultStruct) string {
+func NewDsn(dbName string, conf *data.ConfigDefault) string {
 	dataSource := conf.Database.User + ":" + conf.Database.Pwd + "@tcp(" + conf.Database.Host + ":" + conf.Database.Port + ")/"
 	dsn := dataSource + dbName + "?charset=" + conf.Database.Charset + "&parseTime=True&loc=Local"
 	return dsn
@@ -66,6 +66,18 @@ func NewDb(dsn string, prefix string) *gorm.DB {
 		DisableForeignKeyConstraintWhenMigrating: true,
 		Logger:                                   newLogger,
 	})
+
+	sqlDB, err := db.DB()
+
+	// SetMaxIdleConns 设置空闲连接池中连接的最大数量
+	sqlDB.SetMaxIdleConns(10)
+
+	// SetMaxOpenConns 设置打开数据库连接的最大数量。
+	sqlDB.SetMaxOpenConns(100)
+
+	// SetConnMaxLifetime 设置了连接可复用的最大时间。
+	sqlDB.SetConnMaxLifetime(time.Minute)
+
 
 	if err != nil {
 		panic(err)
