@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"fmt"
+	"github.com/gincmf/cmf/data"
 	"github.com/gincmf/cmf/model"
 	"github.com/gincmf/cmf/util"
 	"github.com/go-redis/redis"
@@ -28,27 +29,44 @@ func initDefault() {
 	dbHost := config.Database.Host
 	util.Conf = config
 
-	initClient()
+	redis := config.Redis
+	empty := data.Redis{}
+	if redis != empty {
+		// 初始化redis
+		initClient(redis)
+	}
+
 	if dbHost != "" {
 		dbName := config.Database.Name
 		//创建不存在的数据库
-		model.CreateTable(dbName,config)
-		dsn := model.NewDsn(dbName,config)
-		Db = model.NewDb(dsn,config.Database.Prefix)
+		model.CreateTable(dbName, config)
+		dsn := model.NewDsn(dbName, config)
+		Db = model.NewDb(dsn, config.Database.Prefix)
 		fmt.Println("创建数据库表成功！")
 	}
 }
 
-func initClient() (err error) {
+func initClient(database data.Redis) {
+
+	if database.Host == "" {
+		panic("redis host not empty")
+	}
+
+	if database.Port == "" {
+		panic("redis port not empty")
+	}
+
 	RedisDb = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     database.Host + ":" + database.Port,
+		Password: database.Pwd,      // no password set
+		DB:       database.Database, // use default DB
 	})
 
-	_, err = RedisDb.Ping().Result()
+	fmt.Println("RedisDb：", RedisDb)
+	result, err := RedisDb.Ping().Result()
 	if err != nil {
-		return err
+		panic(err.Error())
 	}
-	return nil
+	fmt.Println("redis连接状态：", result)
+
 }
