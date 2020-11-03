@@ -29,10 +29,15 @@ func NewDb() *gorm.DB {
 			model.CreateTable(dbName, config)
 			dsn := model.NewDsn(dbName, config)
 			db = model.NewDb(dsn, config.Database.Prefix)
-			dbSql,_ := db.DB()
-			defer dbSql.Close()
 		})
 	}
+	return db
+}
+
+func ManualDb(dbName string) *gorm.DB {
+	config := Conf()
+	dsn := model.NewDsn(dbName, config)
+	db = model.NewDb(dsn, config.Database.Prefix)
 	return db
 }
 
@@ -60,7 +65,6 @@ func NewRedisDb() *redis.Client {
 					panic(err.Error())
 				}
 				fmt.Println("redis连接状态：", result)
-				defer redisDb.Close()
 			}
 		})
 	}
