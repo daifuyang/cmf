@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gincmf/cmf/data"
+	"github.com/gincmf/cmf/util"
 	"io/ioutil"
 )
 
@@ -53,7 +54,12 @@ func Initialize(filePath string) {
 		break
 	}
 
-	initDefault()
+	TemplateMap.Theme = config.Template.Theme
+	TemplateMap.ThemePath = config.Template.ThemePath
+	TemplateMap.Glob = config.Template.Glob
+	TemplateMap.Static = config.Template.Static
+	util.Conf = config
+	//initDefault()
 }
 
 func Conf() *data.ConfigDefault {
