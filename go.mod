@@ -9,6 +9,7 @@ require (
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/golang/protobuf v1.4.1 // indirect
 	github.com/gorilla/sessions v1.2.0 // indirect
+	github.com/qiniu/api.v7/v7 v7.6.0
 	github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14
 	github.com/swaggo/gin-swagger v1.2.0
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
