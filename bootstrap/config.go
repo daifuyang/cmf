@@ -32,6 +32,17 @@ func (conf *ConfigDataStruct) init(filePath string, v interface{}) {
 	if err != nil {
 		return
 	}
+
+	err = json.Unmarshal(data, &qiNiuConfig)
+	if err != nil {
+		return
+	}
+
+	if qiNiuConfig.Enabled {
+		// 注册七牛
+		StartInit(filePath)
+	}
+
 }
 
 func Initialize(filePath string) {
