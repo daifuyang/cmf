@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/gincmf/cmf/controller"
 	"github.com/gincmf/cmf/data"
@@ -15,7 +16,7 @@ import (
 	"strings"
 )
 
-type groupMapStruct data.GroupMapStruct
+type GroupMapStruct data.GroupMapStruct
 
 var (
 	g errgroup.Group
@@ -53,9 +54,20 @@ func Start(){
 func register () {
 	//注册路由
 	Engine = gin.Default()
-	store := cookie.NewStore([]byte(Conf().Database.AuthCode))
-	Engine.Use(sessions.Sessions("mySession", store))
 
+	var store cookie.Store
+	var err error
+	sessionStore := cookie.NewStore([]byte(config.Database.AuthCode))
+	if config.Redis.Host != "" && config.Redis.Enabled {
+		store,err = redis.NewStore(10, "tcp", config.Redis.Host+":"+config.Redis.Port, config.Redis.Port, []byte(config.Database.AuthCode))
+		if err != nil {
+			fmt.Println("[ERROR]", fmt.Sprintf("\x1b[%dm%s\x1b[0m", uint8(91), err.Error()))
+			store = sessionStore
+		}
+	}else{
+		store = sessionStore
+	}
+	Engine.Use(sessions.Sessions("mySession", store))
 	LoadTemplate() //加载模板
 	Engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	rangeRouter(routerMap)
@@ -72,7 +84,7 @@ func register () {
 	//加载uploads静态资源
 	Engine.StaticFS("/uploads", http.Dir("public/uploads"))
 
-	Engine.Run(":"+ config.App.Port)
+	_ = Engine.Run(":" + config.App.Port)
 	//配置路由端口
 	// return Engine
 }
@@ -118,14 +130,14 @@ func Rest(relativePath string, restController controller.RestControllerInterface
 }
 
 // 路由组
-func Group(relativePath string, handlers... gin.HandlerFunc) groupMapStruct {
-	return  groupMapStruct{
+func Group(relativePath string, handlers... gin.HandlerFunc) GroupMapStruct {
+	return  GroupMapStruct{
 		RelativePath:     relativePath,
 		Handlers: handlers,
 	}
 }
 
-func (group *groupMapStruct) Rest(relativePath string, restController controller.RestControllerInterface, handlers ...gin.HandlerFunc) {
+func (group *GroupMapStruct) Rest(relativePath string, restController controller.RestControllerInterface, handlers ...gin.HandlerFunc) {
 	// 临时赋值
 	rPath := ""
 	if group.RelativePath != "" {
@@ -135,7 +147,7 @@ func (group *groupMapStruct) Rest(relativePath string, restController controller
 	Rest(rPath + relativePath,restController,handlers...)
 }
 
-func (group *groupMapStruct) Get(relativePath string, handlers ...gin.HandlerFunc) {
+func (group *GroupMapStruct) Get(relativePath string, handlers ...gin.HandlerFunc) {
 	rPath := ""
 	if group.RelativePath != "" {
 		rPath = strings.TrimRight("/"+group.RelativePath, "/") + "/"
@@ -144,7 +156,7 @@ func (group *groupMapStruct) Get(relativePath string, handlers ...gin.HandlerFun
 	Get(rPath + relativePath,handlers...)
 }
 
-func (group *groupMapStruct) Post(relativePath string, handlers ...gin.HandlerFunc) {
+func (group *GroupMapStruct) Post(relativePath string, handlers ...gin.HandlerFunc) {
 	rPath := ""
 	if group.RelativePath != "" {
 		rPath = strings.TrimRight("/"+group.RelativePath, "/") + "/"

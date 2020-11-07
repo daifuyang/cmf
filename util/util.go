@@ -87,3 +87,7 @@ func Request(method string,url string,body io.Reader,h map[string]string) (int, 
 	return response.StatusCode,data
 }
 
+func Database() data.Database {
+	return Conf.Database
+}
+

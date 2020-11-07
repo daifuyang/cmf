@@ -29,6 +29,7 @@ type Database struct {
 
 // Redis 配置文件对象
 type Redis struct {
+	Enabled  bool   `json:"enabled"`
 	Type     string `json:"type"`
 	Host     string `json:"host"`
 	Pwd      string `json:"password"`
@@ -52,7 +53,7 @@ type ConfigData struct {
 type TempDataBase struct {
 	Default string   `json:"default"`
 	Mysql   Database `json:"mysql"`
-	Redis   Redis `json:"redis"`
+	Redis   Redis    `json:"redis"`
 }
 
 // 定义读取配置缓存文件
