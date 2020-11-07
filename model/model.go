@@ -31,9 +31,6 @@ func CreateTable(dbName string, conf *data.ConfigDefault) {
 	if tempErr != nil {
 		panic(new(error))
 	}
-
-	defer tempDb.Close()
-
 	_, err := tempDb.Exec("CREATE DATABASE IF NOT EXISTS " + dbName + " CHARACTER set utf8mb4 COLLATE utf8mb4_general_ci")
 	if err != nil {
 		panic(err)
