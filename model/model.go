@@ -7,6 +7,7 @@ package model
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/gincmf/cmf/data"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -19,7 +20,7 @@ import (
 
 var Db *gorm.DB
 
-func CreateTable(dbName string, conf *data.ConfigDefault) {
+func CreateTable(dbName string, conf data.ConfigDefault) {
 	//创建不存在的数据库
 	dbUser := conf.Database.User
 	dbPwd := conf.Database.Pwd
@@ -38,7 +39,7 @@ func CreateTable(dbName string, conf *data.ConfigDefault) {
 	tempDb.Close()
 }
 
-func NewDsn(dbName string, conf *data.ConfigDefault) string {
+func NewDsn(dbName string, conf data.ConfigDefault) string {
 	dataSource := conf.Database.User + ":" + conf.Database.Pwd + "@tcp(" + conf.Database.Host + ":" + conf.Database.Port + ")/"
 	dsn := dataSource + dbName + "?charset=" + conf.Database.Charset + "&parseTime=True&loc=Local"
 	return dsn
@@ -54,6 +55,8 @@ func NewDb(dsn string, prefix string) *gorm.DB {
 			Colorful:      false,         // 禁用彩色打印
 		},
 	)
+
+	gorm.ErrRecordNotFound = errors.New("内容不存在！")
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{

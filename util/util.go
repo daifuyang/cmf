@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 var Conf *data.ConfigDefault
@@ -35,7 +36,9 @@ func GetAbsPath() string {
 
 //封装请求库
 func Request(method string,url string,body io.Reader,h map[string]string) (int, []byte){
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: time.Minute*60,
+	}
 	switch method {
 	case "get","GET":
 		method = "GET"
@@ -51,11 +54,11 @@ func Request(method string,url string,body io.Reader,h map[string]string) (int, 
 		fmt.Println("http错误",err)
 	}
 
-	//r.Header.Add("Host", "")
-	//r.Header.Add("Connection","keep-alive")
-	//r.Header.Add("Accept-Encoding","gzip, deflate, br")
-	//r.Header.Add("Content-Length","0")
-	//r.Header.Add("Cache-Control","no-cache")
+	/*r.Header.Add("Host", "")
+	r.Header.Add("Connection","keep-alive")
+	r.Header.Add("Accept-Encoding","gzip, deflate, br")
+	r.Header.Add("Content-Length","0")
+	r.Header.Add("Cache-Control","no-cache")*/
 	for k,v := range h{
 		r.Header.Add(k,v)
 	}

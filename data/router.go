@@ -5,7 +5,16 @@
  */
 package data
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
+
+// 定义ws结构体
+type WsRouterStruct struct {
+	RelativePath string
+	Handler  func(http.ResponseWriter,*http.Request)
+}
 
 //定义路由结构体
 type RouterMapStruct struct {

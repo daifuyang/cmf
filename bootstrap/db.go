@@ -47,10 +47,8 @@ func NewDb() *gorm.DB {
 
 // 手动指定Db
 func ManualDb(dbName string) *gorm.DB {
-	fmt.Println("dbName",dbName)
 	config := Conf()
 	dsn := model.NewDsn(dbName, config)
-	fmt.Println("dsn",dsn)
 	db = model.NewDb(dsn, config.Database.Prefix)
 	return db
 }

@@ -73,6 +73,6 @@ func Initialize(filePath string) {
 	//initDefault()
 }
 
-func Conf() *data.ConfigDefault {
-	return config
+func Conf() data.ConfigDefault {
+	return *config
 }

@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/gincmf/cmf/model"
 	"net/http"
 )
 
@@ -15,24 +17,38 @@ type RestControllerInterface interface {
 
 type RestController struct{}
 
-type returnData struct {
-	Code int         `json:"code"`
-	Msg  string      `json:"msg"`
-	Data interface{} `json:"data"`
-}
+
 
 func (r RestController) Forbidden(c *gin.Context) {
 	c.String(http.StatusNotFound, "页面不存在！")
 }
 
 func (r RestController) Success(c *gin.Context, msg string, data interface{}) {
-	var result returnData
-	result = returnData{1, msg, data}
+	var result model.ReturnData
+	result = model.ReturnData{Code: 1, Msg: msg, Data: data}
 	c.JSON(http.StatusOK, result)
 }
 
 func (r RestController) Error(c *gin.Context, msg string, data interface{}) {
-	var result returnData
-	result = returnData{0, msg, data}
+	var result model.ReturnData
+	result = model.ReturnData{Code: 0,Msg: msg, Data: data}
 	c.JSON(http.StatusOK, result)
+}
+
+func (r RestController) JsonSuccess(msg string, data interface{}) string {
+
+	var result model.ReturnData
+	result = model.ReturnData{Code:1,Msg: msg, Data: data}
+	bytes, _ := json.Marshal(result)
+	return string(bytes)
+
+}
+
+func (r RestController) JsonError(msg string, data interface{}) string {
+
+	var result model.ReturnData
+	result = model.ReturnData{Code:0,Msg: msg, Data: data}
+	bytes, _ := json.Marshal(result)
+	return string(bytes)
+
 }
