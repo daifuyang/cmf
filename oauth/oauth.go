@@ -28,7 +28,7 @@ var (
 	Srv               *server.Server
 )
 
-func RegisterOauthRouter(e *gin.Engine, db *gorm.DB, conf *data.ConfigDefaultStruct) {
+func RegisterOauthRouter(e *gin.Engine, db *gorm.DB, conf *data.ConfigDefault) {
 
 	// 创建userToken表
 	// db.AutoMigrate(userToken{})
@@ -202,7 +202,7 @@ func RegisterOauthRouter(e *gin.Engine, db *gorm.DB, conf *data.ConfigDefaultStr
 
 }
 
-func RegisterTenantRouter(e *gin.Engine, db *gorm.DB, conf *data.ConfigDefaultStruct) {
+func RegisterTenantRouter(e *gin.Engine, db *gorm.DB, conf *data.ConfigDefault) {
 
 	authServerURL := "http://localhost:"+conf.App.Port
 	clientSecret := util.GetMd5(conf.Database.AuthCode)

@@ -7,13 +7,12 @@ package data
 
 import (
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 // 定义ws结构体
 type WsRouterStruct struct {
 	RelativePath string
-	Handler  func(http.ResponseWriter,*http.Request)
+	Handlers      []gin.HandlerFunc
 }
 
 //定义路由结构体
@@ -25,8 +24,8 @@ type RouterMapStruct struct {
 
 // 路由组
 type GroupMapStruct struct {
-	RelativePath     string
-	Handlers 	[]gin.HandlerFunc
+	RelativePath string
+	Handlers     []gin.HandlerFunc
 }
 
 //定义Template结构体

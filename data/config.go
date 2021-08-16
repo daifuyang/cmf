@@ -9,8 +9,12 @@ package data
 type App struct {
 	Port     string
 	AppName  string
+	Evn      string
 	AppDebug bool
 	Domain   string
+	NsqIp    string
+	NsqaPort string
+	NsqdPort string
 }
 
 // Database 配置文件数据库对象 定义了数据库的基础信息

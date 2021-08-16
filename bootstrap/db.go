@@ -6,6 +6,7 @@
 package bootstrap
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gincmf/cmf/data"
 	"github.com/gincmf/cmf/model"
@@ -53,6 +54,12 @@ func ManualDb(dbName string) *gorm.DB {
 	return db
 }
 
+func TempDb(dbName string) *gorm.DB {
+	config := Conf()
+	dsn := model.NewDsn(dbName, config)
+	return model.NewDb(dsn, config.Database.Prefix)
+}
+
 func NewRedisDb() *redis.Client {
 	if redisDb == nil {
 		database := Conf().Redis
@@ -79,4 +86,27 @@ func NewRedisDb() *redis.Client {
 		}
 	}
 	return redisDb
+}
+
+func RedisDb(host string, pwd string) (*redis.Client, error) {
+	database := Conf().Redis
+	empty := data.Redis{}
+	if database != empty {
+		if host == "" {
+			return redisDb, errors.New("redis host not empty")
+		}
+
+		redisDb = redis.NewClient(&redis.Options{
+			Addr:     host + ":" + database.Port,
+			Password: pwd,               // no password set
+			DB:       database.Database, // use default DB
+		})
+		fmt.Println("RedisDb：", redisDb)
+		result, err := redisDb.Ping().Result()
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println("redis连接状态：", result)
+	}
+	return redisDb, nil
 }

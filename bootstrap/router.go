@@ -1,7 +1,6 @@
 package bootstrap
 
 import (
-	"flag"
 	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -9,11 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gincmf/cmf/controller"
 	"github.com/gincmf/cmf/data"
+	"github.com/gorilla/websocket"
 	swaggerFiles "github.com/swaggo/files"
 	"github.com/swaggo/gin-swagger"
 	"golang.org/x/sync/errgroup"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -21,7 +20,8 @@ import (
 type GroupMapStruct data.GroupMapStruct
 
 var (
-	g errgroup.Group
+	g    errgroup.Group
+	conn *websocket.Conn
 )
 
 // ws router
@@ -37,7 +37,7 @@ var HandleFunc []gin.HandlerFunc
 
 func Start() {
 
-	if len(wsRouterMap) > 0 {
+	/*if len(wsRouterMap) > 0 {
 		go func() {
 			var addr = flag.String("addr", ":8089", "http service address")
 			flag.Parse()
@@ -49,7 +49,7 @@ func Start() {
 			handler := http.ListenAndServe(*addr, nil)
 			log.Fatal(handler)
 		}()
-	}
+	}*/
 
 	server := &http.Server{
 		Addr:    ":" + config.App.Port,
@@ -90,7 +90,7 @@ func register() http.Handler {
 	LoadTemplate() //加载模板
 	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	rangeRouter(routerMap)
-
+	rangeSocket(wsRouterMap)
 	// oauth.RegisterOauthRouter(engine, Db, Conf()) //注册OAuth2.0验证
 	// oauth.RegisterTenantRouter(engine, Db, Conf())
 
@@ -124,23 +124,60 @@ func rangeRouter(routerMap []data.RouterMapStruct) {
 	}
 }
 
-func Socket(relativePath string, handler func(http.ResponseWriter, *http.Request)) {
+func rangeSocket(routerMap []data.WsRouterStruct) {
+	for _, router := range wsRouterMap {
+		engine.GET(router.RelativePath, router.Handlers...)
+	}
+}
+
+func Socket(relativePath string,handler gin.HandlerFunc, handlers ...gin.HandlerFunc) {
+
+	socketHandler := func(c *gin.Context) {
+		var upgrader = websocket.Upgrader{
+			// 允许跨域
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		} // use default options
+
+		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			c.JSON(0, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.Set("websocket", conn)
+	}
+
+	handlersMap := []gin.HandlerFunc{socketHandler}
+
+
+	for _, v := range handlers {
+		handlersMap = append(handlersMap, v)
+	}
+
+	handlersMap = append(handlersMap,handler)
+
 	wsRouterMap = append(wsRouterMap, data.WsRouterStruct{
 		RelativePath: relativePath,
-		Handler:      handler,
+		Handlers:     handlersMap,
 	})
 }
 
 //抛出对外注册路由方法
-func Get(relativePath string, handlers ...gin.HandlerFunc) {
+func Get(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) {
+	handlers = append(handlers, handler)
 	routerMap = append(routerMap, data.RouterMapStruct{RelativePath: relativePath, Handlers: handlers, Method: "GET"})
 }
 
-func Post(relativePath string, handlers ...gin.HandlerFunc) {
+func Post(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) {
+	handlers = append(handlers, handler)
 	routerMap = append(routerMap, data.RouterMapStruct{RelativePath: relativePath, Handlers: handlers, Method: "POST"})
 }
 
-func Delete(relativePath string, handlers ...gin.HandlerFunc) {
+func Delete(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) {
+	handlers = append(handlers, handler)
 	routerMap = append(routerMap, data.RouterMapStruct{RelativePath: relativePath, Handlers: handlers, Method: "DELETE"})
 }
 
@@ -204,31 +241,32 @@ func (group *GroupMapStruct) Rest(relativePath string, restController controller
 	Rest(rPath+relativePath, restController, handlers...)
 }
 
-func (group *GroupMapStruct) Get(relativePath string, handlers ...gin.HandlerFunc) {
+func (group *GroupMapStruct) Get(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) {
 	rPath := ""
 	if group.RelativePath != "" {
 		rPath = strings.TrimRight("/"+group.RelativePath, "/") + "/"
 	}
+
 	handlers = append(group.Handlers, handlers...)
-	Get(rPath+relativePath, handlers...)
+	Get(rPath+relativePath, handler, handlers...)
 }
 
-func (group *GroupMapStruct) Post(relativePath string, handlers ...gin.HandlerFunc) {
+func (group *GroupMapStruct) Post(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) {
 	rPath := ""
 	if group.RelativePath != "" {
 		rPath = strings.TrimRight("/"+group.RelativePath, "/") + "/"
 	}
 	handlers = append(group.Handlers, handlers...)
-	Post(rPath+relativePath, handlers...)
+	Post(rPath+relativePath, handler, handlers...)
 }
 
-func (group *GroupMapStruct) Delete(relativePath string, handlers ...gin.HandlerFunc) {
+func (group *GroupMapStruct) Delete(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) {
 	rPath := ""
 	if group.RelativePath != "" {
 		rPath = strings.TrimRight("/"+group.RelativePath, "/") + "/"
 	}
 	handlers = append(group.Handlers, handlers...)
-	Delete(rPath+relativePath, handlers...)
+	Delete(rPath+relativePath, handler, handlers...)
 }
 
 func LoadTemplate() {

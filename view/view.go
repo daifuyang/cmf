@@ -5,23 +5,28 @@ import (
 	"net/http"
 )
 
-type TemplateStruct struct {
+type Template struct {
 	Context *gin.Context
-	Name string
-	Obj map[string]interface{}
+	Name    string
+	Obj     map[string]interface{}
 }
 
-var Template TemplateStruct
-
-func Assign(k string,i interface{})  {
-	if Template.Obj == nil {
-		Template.Obj = make(map[string]interface{})
+func (t *Template) Assign(k string, i interface{}) Template {
+	if t.Obj == nil {
+		t.Obj = make(map[string]interface{})
 	}
-	Template.Obj[k] = i
+	t.Obj[k] = i
+	return *t
 }
 
 //渲染方法
-func Fetch(name string){
-	c := Template.Context
-	c.HTML(http.StatusOK, name, Template.Obj)
+func (t *Template) Fetch(name string) {
+	c := t.Context
+	c.HTML(http.StatusOK, name, t.Obj)
+}
+
+func (t *Template) Error(error string) {
+	c := t.Context
+	t.Obj["error"] = error
+	c.HTML(http.StatusOK, "error.html", t.Obj)
 }

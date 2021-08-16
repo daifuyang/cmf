@@ -15,27 +15,30 @@ type RestControllerInterface interface {
 	Delete(c *gin.Context)
 }
 
-type RestController struct{}
+type Rest struct{}
 
-
-
-func (r RestController) Forbidden(c *gin.Context) {
+func (r Rest) Forbidden(c *gin.Context) {
 	c.String(http.StatusNotFound, "页面不存在！")
 }
 
-func (r RestController) Success(c *gin.Context, msg string, data interface{}) {
+func (r Rest) Success(c *gin.Context, msg string, data interface{}) {
 	var result model.ReturnData
 	result = model.ReturnData{Code: 1, Msg: msg, Data: data}
 	c.JSON(http.StatusOK, result)
 }
 
-func (r RestController) Error(c *gin.Context, msg string, data interface{}) {
+func (r Rest) Error(c *gin.Context, msg string, data interface{}) {
 	var result model.ReturnData
 	result = model.ReturnData{Code: 0,Msg: msg, Data: data}
 	c.JSON(http.StatusOK, result)
 }
+func (r Rest) ErrorCode(c *gin.Context,code int, msg string, data interface{}) {
+	var result model.ReturnData
+	result = model.ReturnData{Code: code,Msg: msg, Data: data}
+	c.JSON(http.StatusOK, result)
+}
 
-func (r RestController) JsonSuccess(msg string, data interface{}) string {
+func (r Rest) JsonSuccess(msg string, data interface{}) string {
 
 	var result model.ReturnData
 	result = model.ReturnData{Code:1,Msg: msg, Data: data}
@@ -44,7 +47,7 @@ func (r RestController) JsonSuccess(msg string, data interface{}) string {
 
 }
 
-func (r RestController) JsonError(msg string, data interface{}) string {
+func (r Rest) JsonError(msg string, data interface{}) string {
 
 	var result model.ReturnData
 	result = model.ReturnData{Code:0,Msg: msg, Data: data}

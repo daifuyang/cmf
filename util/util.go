@@ -3,6 +3,7 @@ package util
 import (
 	"compress/gzip"
 	"crypto/md5"
+	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"github.com/gincmf/cmf/data"
@@ -21,6 +22,12 @@ var Conf *data.ConfigDefault
 func GetMd5(s string) string {
 	h := md5.New()
 	h.Write([]byte(Conf.Database.AuthCode + s))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func GetSha1(s string) string {
+	h := sha1.New()
+	h.Write([]byte(s))
 	return hex.EncodeToString(h.Sum(nil))
 }
 

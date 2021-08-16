@@ -9,8 +9,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/qiniu/api.v7/v7/auth/qbox"
-	"github.com/qiniu/api.v7/v7/storage"
+	"github.com/qiniu/go-sdk/v7/auth/qbox"
+	"github.com/qiniu/go-sdk/v7/storage"
 	"io/ioutil"
 	"strings"
 )
@@ -32,6 +32,7 @@ type QiNiu struct {
 
 type Config struct {
 	qiNiu `json:"qiniu"`
+	BucketManager *storage.BucketManager `json:"-"`
 }
 
 var (
@@ -45,6 +46,7 @@ func StartInit(path string) {
 }
 
 func NewQiuNiu() *Config {
+
 	if qiNiuConfig == nil {
 		data, err := ioutil.ReadFile(publicPath)
 		if err != nil {
@@ -55,13 +57,20 @@ func NewQiuNiu() *Config {
 		if err != nil {
 			panic(err.Error())
 		}
+
 	}
+
 	return qiNiuConfig
 }
 
+func QiuNiuConf() *Config {
+	return qiNiuConfig
+}
+
+
 func (qn QiNiu) UploadFile(key string, localPath string) (string, error) {
 
-	bucket := qn.Bucket
+	bucket := qiNiuConfig.Bucket
 	if qn.Bucket != "" {
 		bucket = qn.Bucket
 	}
@@ -69,8 +78,6 @@ func (qn QiNiu) UploadFile(key string, localPath string) (string, error) {
 	putPolicy := storage.PutPolicy{
 		Scope: bucket,
 	}
-
-	fmt.Println("qiNiuConfig", qiNiuConfig)
 
 	mac := qbox.NewMac(qiNiuConfig.AccessKey, qiNiuConfig.SecretKey)
 	upToken := putPolicy.UploadToken(mac)
@@ -96,8 +103,7 @@ func (qn QiNiu) UploadFile(key string, localPath string) (string, error) {
 	cfg.UseCdnDomains = qiNiuConfig.IsCdn
 	resumeUploader := storage.NewResumeUploader(&cfg)
 	ret := storage.PutRet{}
-	putExtra := storage.RputExtra{
-	}
+	putExtra := storage.RputExtra{}
 	err := resumeUploader.PutFile(context.Background(), &ret, upToken, key, localPath, &putExtra)
 	if err != nil {
 		fmt.Println(err)

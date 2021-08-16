@@ -5,7 +5,12 @@ import (
 	"fmt"
 	"github.com/gincmf/cmf/data"
 	"github.com/gincmf/cmf/util"
+	"github.com/qiniu/go-sdk/v7/auth"
+	"github.com/qiniu/go-sdk/v7/client"
+	"github.com/qiniu/go-sdk/v7/storage"
 	"io/ioutil"
+	"net/http"
+	"time"
 )
 
 //ConfigData 定义一个空结构体
@@ -39,6 +44,20 @@ func (conf *ConfigDataStruct) init(filePath string, v interface{}) {
 	}
 
 	if qiNiuConfig.Enabled {
+
+		// 获取 bucket 管理权限
+		clt := client.Client{
+			Client: &http.Client{
+				Timeout: time.Minute * 10,
+			},
+		}
+		mac := auth.New(qiNiuConfig.AccessKey, qiNiuConfig.SecretKey)
+		cfg := storage.Config{}
+		cfg.Zone = &storage.Zone_z0
+		cfg.UseCdnDomains = true
+		bucketManager := storage.NewBucketManagerEx(mac, &cfg, &clt)
+		qiNiuConfig.BucketManager = bucketManager
+
 		// 注册七牛
 		StartInit(filePath)
 	}
@@ -71,6 +90,12 @@ func Initialize(filePath string) {
 	TemplateMap.Static = config.Template.Static
 	util.Conf = config
 	//initDefault()
+}
+
+func SetConf(name string,value string) {
+	if name == "domain" && value != "" {
+		config.App.Domain = value
+	}
 }
 
 func Conf() data.ConfigDefault {
