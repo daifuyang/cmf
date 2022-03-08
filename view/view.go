@@ -6,27 +6,36 @@ import (
 )
 
 type Template struct {
-	Context *gin.Context
-	Name    string
-	Obj     map[string]interface{}
+	c    *gin.Context
+	Name string
+	Obj  map[string]interface{}
 }
 
-func (t *Template) Assign(k string, i interface{}) Template {
+func (t Template) Assign(k string, i interface{}) Template {
 	if t.Obj == nil {
 		t.Obj = make(map[string]interface{})
 	}
 	t.Obj[k] = i
-	return *t
+	return t
+}
+
+func (t Template) GetView(c *gin.Context) Template {
+	cmfView, _ := c.Get("template")
+	iView := Template{}
+	switch cmfView.(type) {
+	case Template:
+		iView = cmfView.(Template)
+	}
+	iView.c = c
+	return iView
 }
 
 //渲染方法
 func (t *Template) Fetch(name string) {
-	c := t.Context
-	c.HTML(http.StatusOK, name, t.Obj)
+	t.c.HTML(http.StatusOK, name, t.Obj)
 }
 
 func (t *Template) Error(error string) {
-	c := t.Context
 	t.Obj["error"] = error
-	c.HTML(http.StatusOK, "error.html", t.Obj)
+	t.c.HTML(http.StatusOK, "error.html", t.Obj)
 }

@@ -16,7 +16,6 @@ import (
 
 var (
 	commDb  *gorm.DB
-	db      *gorm.DB
 	redisDb *redis.Client
 )
 
@@ -34,33 +33,27 @@ func Db() *gorm.DB {
 }
 
 // 获取当前指定Db
-func NewDb() *gorm.DB {
-	if db == nil {
-		config := Conf()
-		dbName := config.Database.Name
-		//创建不存在的数据库
-		model.CreateTable(dbName, config)
-		dsn := model.NewDsn(dbName, config)
-		db = model.NewDb(dsn, config.Database.Prefix)
-	}
-	return db
-}
+//func NewDb() *gorm.DB {
+//	if db == nil {
+//		config := Conf()
+//		dbName := config.Database.Name
+//		//创建不存在的数据库
+//		model.CreateTable(dbName, config)
+//		dsn := model.NewDsn(dbName, config)
+//		fmt.Println("dsn",dsn)
+//		db = model.NewDb(dsn, config.Database.Prefix)
+//	}
+//	return db
+//}
 
 // 手动指定Db
 func ManualDb(dbName string) *gorm.DB {
 	config := Conf()
 	dsn := model.NewDsn(dbName, config)
-	db = model.NewDb(dsn, config.Database.Prefix)
-	return db
-}
-
-func TempDb(dbName string) *gorm.DB {
-	config := Conf()
-	dsn := model.NewDsn(dbName, config)
 	return model.NewDb(dsn, config.Database.Prefix)
 }
 
-func NewRedisDb() *redis.Client {
+func RedisDb() *redis.Client {
 	if redisDb == nil {
 		database := Conf().Redis
 		empty := data.Redis{}
@@ -88,10 +81,10 @@ func NewRedisDb() *redis.Client {
 	return redisDb
 }
 
-func RedisDb(host string, pwd string) (*redis.Client, error) {
+func ManualRedisDb(host string, pwd string) (*redis.Client, error) {
 	database := Conf().Redis
 	empty := data.Redis{}
-	if database != empty {
+	if database != empty && database.Enabled {
 		if host == "" {
 			return redisDb, errors.New("redis host not empty")
 		}

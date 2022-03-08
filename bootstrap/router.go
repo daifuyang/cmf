@@ -35,24 +35,12 @@ var theme, path, themePath string
 
 var HandleFunc []gin.HandlerFunc
 
-func Start() {
+func Start(port ...string) {
 
-	/*if len(wsRouterMap) > 0 {
-		go func() {
-			var addr = flag.String("addr", ":8089", "http service address")
-			flag.Parse()
-			log.SetFlags(0)
-
-			for _, v := range wsRouterMap {
-				http.HandleFunc(v.RelativePath, v.Handler)
-			}
-			handler := http.ListenAndServe(*addr, nil)
-			log.Fatal(handler)
-		}()
-	}*/
+	appPort := getPort(port...)
 
 	server := &http.Server{
-		Addr:    ":" + config.App.Port,
+		Addr:    ":" + appPort,
 		Handler: register(),
 	}
 
@@ -66,6 +54,18 @@ func Start() {
 	} else {
 		fmt.Println("Get all num successfully!")
 	}
+}
+
+func getPort(port ...string) string {
+	appPort := config.App.Port
+	if appPort == "" {
+		if len(port) > 0 {
+			appPort = port[0]
+		} else {
+			appPort = "8000"
+		}
+	}
+	return appPort
 }
 
 func register() http.Handler {
@@ -86,24 +86,28 @@ func register() http.Handler {
 	} else {
 		store = sessionStore
 	}
-	engine.Use(sessions.Sessions("mySession", store))
+	if store != nil {
+		engine.Use(sessions.Sessions("mySession", store))
+	}
+	// engine.Delims("${", "}")
 	LoadTemplate() //加载模板
 	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	rangeRouter(routerMap)
 	rangeSocket(wsRouterMap)
-	// oauth.RegisterOauthRouter(engine, Db, Conf()) //注册OAuth2.0验证
-	// oauth.RegisterTenantRouter(engine, Db, Conf())
 
 	//扫描主题路径
-	files := scanThemeDir(path)
-	for _, t := range files {
-		//扫描项目模板下的全部模块
-		engine.StaticFS(path+"/"+t.name+"/"+"assets", http.Dir(t.path+"/public/assets"))
+	if path != "" {
+		files := scanThemeDir(path)
+		for _, t := range files {
+			//扫描项目模板下的全部模块
+			engine.StaticFS(path+"/"+t.name+"/"+"assets", http.Dir(t.path+"/public/assets"))
+		}
+		//加载uploads静态资源
+		engine.StaticFS("/uploads", http.Dir("public/uploads"))
+		engine.StaticFS("/exports", http.Dir("public/exports"))
 	}
-	//加载uploads静态资源
-	engine.StaticFS("/uploads", http.Dir("public/uploads"))
-	engine.StaticFS("/exports", http.Dir("public/exports"))
-	_ = engine.Run(":" + config.App.Port)
+	appPort := getPort()
+	_ = engine.Run(":" + appPort)
 	//配置路由端口
 	return engine
 }
@@ -130,7 +134,7 @@ func rangeSocket(routerMap []data.WsRouterStruct) {
 	}
 }
 
-func Socket(relativePath string,handler gin.HandlerFunc, handlers ...gin.HandlerFunc) {
+func Socket(relativePath string, handler gin.HandlerFunc, handlers ...gin.HandlerFunc) {
 
 	socketHandler := func(c *gin.Context) {
 		var upgrader = websocket.Upgrader{
@@ -152,12 +156,11 @@ func Socket(relativePath string,handler gin.HandlerFunc, handlers ...gin.Handler
 
 	handlersMap := []gin.HandlerFunc{socketHandler}
 
-
 	for _, v := range handlers {
 		handlersMap = append(handlersMap, v)
 	}
 
-	handlersMap = append(handlersMap,handler)
+	handlersMap = append(handlersMap, handler)
 
 	wsRouterMap = append(wsRouterMap, data.WsRouterStruct{
 		RelativePath: relativePath,
@@ -182,7 +185,7 @@ func Delete(relativePath string, handler gin.HandlerFunc, handlers ...gin.Handle
 }
 
 //处理资源控制器
-func Rest(relativePath string, restController controller.RestControllerInterface, handlers ...gin.HandlerFunc) {
+func Rest(relativePath string, restController controller.RestInterface, handlers ...gin.HandlerFunc) {
 	if relativePath == "/" {
 		routerMap = append(routerMap, data.RouterMapStruct{Handlers: []gin.HandlerFunc{restController.Get}, Method: "GET"})
 	} else {
@@ -231,7 +234,7 @@ func Group(relativePath string, handlers ...gin.HandlerFunc) GroupMapStruct {
 	}
 }
 
-func (group *GroupMapStruct) Rest(relativePath string, restController controller.RestControllerInterface, handlers ...gin.HandlerFunc) {
+func (group *GroupMapStruct) Rest(relativePath string, restController controller.RestInterface, handlers ...gin.HandlerFunc) {
 	// 临时赋值
 	rPath := ""
 	if group.RelativePath != "" {
@@ -271,11 +274,13 @@ func (group *GroupMapStruct) Delete(relativePath string, handler gin.HandlerFunc
 
 func LoadTemplate() {
 	//加载全部主题路径
-	theme = strings.TrimRight(TemplateMap.Theme, "/") + "/"
-	path = strings.TrimRight(TemplateMap.ThemePath, "/") + "/"
-	themePath = path + theme
-	files := scanFiles(themePath)
-	engine.LoadHTMLFiles(files...)
+	if TemplateMap.Theme != "" && TemplateMap.ThemePath != "" {
+		theme = strings.TrimRight(TemplateMap.Theme, "/") + "/"
+		path = strings.TrimRight(TemplateMap.ThemePath, "/") + "/"
+		themePath = path + theme
+		files := scanFiles(themePath)
+		engine.LoadHTMLFiles(files...)
+	}
 }
 
 type themeDirStruct struct {

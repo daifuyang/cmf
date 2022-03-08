@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-type RestControllerInterface interface {
+type RestInterface interface {
 	Get(c *gin.Context)
 	Show(c *gin.Context)
 	Edit(c *gin.Context)
