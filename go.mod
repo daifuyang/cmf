@@ -14,7 +14,7 @@ require (
 	github.com/swaggo/gin-swagger v1.2.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
-	golang.org/x/sys v0.0.0-20200509044756-6aff5f38e54f // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	google.golang.org/grpc v1.42.0
 	gopkg.in/oauth2.v3 v3.12.0
 	gorm.io/driver/mysql v1.0.1
